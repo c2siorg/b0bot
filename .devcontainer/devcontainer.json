@@ -13,7 +13,7 @@
 	},
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	//"postCreateCommand": "chmod +x ./installer_script.sh && ./installer_script.sh",
+	"postCreateCommand": "chmod +x ./installer_script.sh && ./installer_script.sh",
 
 	// Configure tool-specific properties.
 	"customizations": {}
