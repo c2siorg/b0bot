@@ -11,3 +11,13 @@ B0Bot lives inside a Flask API and periodically it will retweet certain Twitter 
 # Developer Road Map
 
 - [ ] Setup initial Flask API
+- [ ] Set up a Twitter developer account and create a new app to access the Twitter API
+- [ ] Configure the Tweepy library to interact with the Twitter API using Python
+- [ ] Set up a MongoDB database using PyMongo to store the data collected by B0Bot
+- [ ] Set up a Flask API that handles incoming requests from Twitter and users
+- [ ] Implement B0Bot's periodic news feature by configuring the Tweepy library to periodically collect and store data from the Twitter API
+- [ ] Implement B0Bot's keyword search feature by setting up a webhook to receive and process user requests from Twitter
+- [ ] Implement B0Bot's retweet feature by configuring the Tweepy library to retweet tweets from certain accounts
+- [ ] Implement B0Bot's reply feature by processing user mentions and sending appropriate responses
+- [ ] Deploy B0Bot as a serverless function using Vercel
+- [ ] Set up a monitoring dashboard using Better Uptime to record periodic operation logs and metrics
