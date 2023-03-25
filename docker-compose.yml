@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    container_name: B0Bot-App
+    command: gunicorn -b 0.0.0.0:80 --log-level debug --reload "src.app:app" # developement
+    # command: gunicorn -b 0.0.0.0:80 --reload "src.app:app"  # production
+    ports:
+      - 80:80
+    volumes:
+      - .:/code
