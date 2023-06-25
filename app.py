@@ -1,5 +1,5 @@
+import os
 from flask import *
-from dotenv import load_dotenv
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -7,7 +7,8 @@ from langchain.prompts import PromptTemplate
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
 # load environment variable
-load_dotenv()
+# Access environment variables
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
 # Create a LLM object
 llm = OpenAI(temperature=0.9)
 
@@ -15,7 +16,7 @@ llm = OpenAI(temperature=0.9)
 def getNews():
     # fixed format for answer
     answer_format = "news content (data source, date)"
-    
+
     # add prompt
     prompt = PromptTemplate(
         input_variables=["format"],
