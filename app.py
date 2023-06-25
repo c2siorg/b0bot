@@ -6,9 +6,10 @@ from langchain.prompts import PromptTemplate
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
-# load environment variable
+
 # Access environment variables
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
 # Create a LLM object
 llm = OpenAI(temperature=0.9)
 
@@ -60,6 +61,11 @@ def getNewsWithKeywords():
     news_JSON = toJSON(news)
 
     return news_JSON
+
+# deal requests with wrong route
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'Not Found'}), 404
 
 # Convert news given by OpenAI API into JSON format.
 def toJSON(data: str):
