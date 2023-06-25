@@ -2,3 +2,4 @@ Flask
 langchain
 openai
 gunicorn==19.7.1
+python==3.9.6
