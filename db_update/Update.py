@@ -52,7 +52,7 @@ news = {
 Notice: "id" should be removed before the news is inserted into the database.
 """
 
-# db has limited storage space(512mb), clean up the old news everytime
+# db has limited storage space(512mb), clean up old news before fetching new news.
 collection.delete_many({})
 
 # Insert all feteched news into the database.

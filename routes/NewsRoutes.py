@@ -1,7 +1,8 @@
 from flask import *
-from controllers.NewsController import *
+from controllers.NewsController import NewsController
 
 routes = Blueprint("routes", __name__)
+news_controller = NewsController()
 
 """
 return news without considering keywords
@@ -10,7 +11,7 @@ return news without considering keywords
 
 @routes.route("/news", methods=["GET"])
 def getNews_route():
-    return getNews()
+    return news_controller.getNews()
 
 
 """
@@ -22,7 +23,7 @@ return news based on certain keywords
 def getNewsWithKeywords_route():
     # get list of keywords as argument from User's request
     user_keywords = request.args.getlist("keywords")
-    return getNewsWithKeywords(user_keywords)
+    return news_controller.getNewsWithKeywords(user_keywords)
 
 
 """
@@ -32,4 +33,4 @@ deal requests with wrong route
 
 @routes.errorhandler(404)
 def notFound_route(error):
-    notFound(error)
+    news_controller.notFound(error)
