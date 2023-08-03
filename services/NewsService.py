@@ -67,7 +67,7 @@ class NewsService:
     """
 
     def notFound(self, error):
-        return jsonify({"error": "Not Found"}), 404
+        return jsonify({"error": error}), 404
 
     """
     Convert news given by OpenAI API into JSON format.
