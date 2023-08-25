@@ -1,8 +1,9 @@
-python-dotenv
-Flask
-langchain==0.0.222
-openai
+python-dotenv==1.0.0
+Flask==2.3.2
+langchain==0.0.256
+openai==0.27.8
 gunicorn==19.7.1
 pymongo==4.4.0
 dnspython==2.3.0
-cybernews
+cybernews==1.1.2
+pydantic==1.10.9
