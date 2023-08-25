@@ -1,27 +1,27 @@
-import services.NewsService as NewsService
-
-"""
-return news without considering keywords
-"""
+from services.NewsService import NewsService
 
 
-def getNews():
-    return NewsService.getNews()
+class NewsController:
+    def __init__(self) -> None:
+        self.news_service = NewsService()
 
+    """
+    return news without considering keywords
+    """
 
-"""
-return news based on certain keywords
-"""
+    def getNews(self):
+        return self.news_service.getNews()
 
+    """
+    return news based on certain keywords
+    """
 
-def getNewsWithKeywords(user_keywords):
-    return NewsService.getNewsWithKeywords(user_keywords)
+    def getNewsWithKeywords(self, user_keywords):
+        return self.news_service.getNewsWithKeywords(user_keywords)
 
+    """
+    deal requests with wrong route
+    """
 
-"""
-deal requests with wrong route
-"""
-
-
-def notFound(error):
-    return NewsService.notFound(error)
+    def notFound(self, error):
+        return self.news_service.notFound(error)
