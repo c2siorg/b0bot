@@ -1,4 +1,3 @@
-python-dotenv
 Flask
 langchain
 openai==0.27.8
