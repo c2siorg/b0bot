@@ -1,5 +1,5 @@
 python-dotenv
-Flask==2.3.2
+Flask
 langchain==0.0.256
 openai==0.27.8
 gunicorn==19.7.1
