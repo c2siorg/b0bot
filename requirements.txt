@@ -1,6 +1,6 @@
 python-dotenv
 Flask
-langchain==0.0.24
+langchain
 openai==0.27.8
 gunicorn==19.7.1
 pymongo==4.4.0
