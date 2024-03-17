@@ -1,5 +1,53 @@
 # B0Bot - CyberSecurity News API
 
+## Setup
+1. Install all necessary packages
+
+`pip install -r ./requirements.txt`
+
+2. Set up your MongoDB Atlas database
+
+https://www.mongodb.com/atlas/database
+
+3. Set up your OpenAI API account
+
+https://platform.openai.com/docs/overview
+
+
+4. Create `.env` file in the root directory
+
+```
+# ./env
+
+# OpenAI
+OPENAI_API_KEY='[Your OpenAI API Key here]'
+
+# MongoDB Atlas
+DB_PASSWORD='[Your database password here]'
+```
+
+5. Remember to replace the MongoDB connection string
+
+```
+# Example
+client = MongoClient(f"mongodb+srv://b0bot:{DB_PASSWORD}@cluster0.zqgexb4.mongodb.net/") # Replace the string with yours
+```
+
+6. Enrich/Update news data into your database
+
+Run `./db_update/Update.py` as a worker on a cloud service (e.g. heroku).
+Or, run `./db_update/Update.py` manually in local.
+
+7. Run the flask app
+
+`flask --app app.py run`
+
+8. Two available url paths
+```
+/news
+/news_keywords?keywords=[Place news keywords here]
+```
+
 In this project, our objective is to develop a CyberSecurity News API tailored for automated bots on social media platforms.
 
 It is a cutting-edge Flask-based API that grants seamless access to the latest cybersecurity and hacker news. Users can effortlessly retrieve news articles either through specific keywords or without, streamlining the information acquisition process.
