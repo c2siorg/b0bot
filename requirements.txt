@@ -6,3 +6,4 @@ gunicorn==19.7.1
 pymongo==4.4.0
 dnspython==2.3.0
 cybernews
+huggingface_hub
