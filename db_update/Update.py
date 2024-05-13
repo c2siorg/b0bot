@@ -14,8 +14,7 @@ from cybernews.cybernews import CyberNews
 # MongoDB Database connection
 DB_PASSWORD = dotenv_values(".env").get("DB_PASSWORD")
 
-client = MongoClient(f"mongodb+srv://b0bot:{DB_PASSWORD}@cluster0.zqgexb4.mongodb.net/")
-
+client = MongoClient(f"mongodb+srv://hardikgpu01:{DB_PASSWORD}@practice.pdylnhr.mongodb.net/")
 db = client.CybernewsDB
 
 collection = db.get_collection("news")
