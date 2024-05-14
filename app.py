@@ -1,7 +1,5 @@
 from dotenv import dotenv_values
 from flask import *
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 
 from routes.NewsRoutes import routes
