@@ -12,12 +12,7 @@ os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
     def __init__(self) -> None:
         self.db = CybernewsDB()
-        # self.OPENAI_API_KEY = dotenv_values(".env").get("OPENAI_API_KEY")
-        # self.llm = ChatOpenAI(temperature=0.1, openai_api_key=self.OPENAI_API_KEY)
-        # fixed format for answer
-        # Load environment variables from .env file
-        
-        repo_id = "mistralai/Mistral-7B-Instruct-v0.2"
+        repo_id = "mistralai/Mistral-7B-Instruct-v0.2" # loading the llm
 
         self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
@@ -163,15 +158,12 @@ class NewsService:
                 title = item
                 remaining = ""
             title = title.strip(' "')
-            # print("--------------------------------------------------------------")
             # Extract the source by splitting at ',' and removing leading/trailing whitespace
             if "," not in remaining:
-                source = "hardik"
-                date = "12"
-                url = "https://www.google.com"
+                source = "N/A"
+                date = "N/A"
+                url = "N/A"
             else:
-                # print(remaining)
-                # print("-------------------------------------") 
                 source, date, url = remaining.split(",")
 
             source = source.strip(' "')

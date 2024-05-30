@@ -46,6 +46,8 @@ Or, run `./db_update/Update.py` manually in local.
 /news
 /news_keywords?keywords=[Place news keywords here]
 ```
+> [!IMPORTANT]
+> The interface will only work if you specify the one of the avaialble paths above.
 
 In this project, our objective is to develop a CyberSecurity News API tailored for automated bots on social media platforms.
 
