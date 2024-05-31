@@ -22,13 +22,13 @@ class NewsService:
         self.news_number = 10
 
     """
-    Return news without considering keywords
+    Return news while checking if keyword has been specified or not
     """
 
-    def getNews(self):
-        # fetch news data from db:
-        # only fetch data with valid `author` and `newsDate`
-        # drop field "id" from collection
+    def getNews(self, user_keywords=None):
+    # Fetch news data from db:
+    # Only fetch data with valid `author` and `newsDate`
+    # Drop field "id" from collection
         news_data = self.db.get_news_collections().find(
             {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
             {
@@ -46,79 +46,37 @@ class NewsService:
 
         prompt = PromptTemplate.from_template(template)
 
+        # Determine which messages template to load
+        if user_keywords:
+            messages_template_path = 'prompts/withkey.json'
+        else:
+            messages_template_path = 'prompts/withoutkey.json'
+
         # Load the messages template from the JSON file
-        messages_template_path = 'prompts/withoutkey.json'
         messages = self.load_json_file(messages_template_path)
 
         # Replace placeholders in the messages
         for message in messages:
             if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
                 message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
-            if message['role'] == 'user' and '{news_format}' in message['content']:
-                message['content'] = message['content'].replace('{news_format}', self.news_format)
-            if message['role'] == 'user' and '{news_number}' in message['content']:
-                message['content'] = message['content'].replace('{news_number}', str(self.news_number))
-
-
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output=llm_chain.invoke(messages)
-        print(output['text'])
-
-        # convert news data into JSON format
-        news_JSON = self.toJSON(output['text'])
-
-        return news_JSON
-
-    """
-    return news based on certain keywords
-    """
-
-    def getNewsWithKeywords(self, user_keywords):
-        # fetch news data from db:
-        # only fetch data with valid `author` and `newsDate`
-        # drop field "id" from collection
-        news_data = self.db.get_news_collections().find(
-            {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
-            {
-                "headlines": 1,
-                "newsDate": 1,
-                "author": 1,
-                "newsURL": 1,
-                "_id": 0,
-            },
-        )
-        news_data = list(news_data)
-
-        template = """Question: {question}
-        Answer: Let's think step by step."""
-
-        prompt = PromptTemplate.from_template(template)
-
-        # Load the messages template from the JSON file
-        messages_template_path = 'prompts/withkey.json'
-        messages = self.load_json_file(messages_template_path)
-
-        # Replace placeholders in the messages
-        for message in messages:
-            if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
-                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
-            if message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
+            if user_keywords and message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
                 message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
             if message['role'] == 'user' and '{news_format}' in message['content']:
                 message['content'] = message['content'].replace('{news_format}', self.news_format)
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
-
+        # Create the LLMChain with the prompt and llm
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output=llm_chain.invoke(messages)
+        output = llm_chain.invoke(messages)
         print(output['text'])
 
-        # convert news data into JSON format
+        # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
 
         return news_JSON
 
+ 
     """
     deal requests with wrong route
     """
@@ -136,7 +94,7 @@ class NewsService:
         return data
 
     """
-    Convert news given by OpenAI API into JSON format.
+    Convert news given by Huggingface endpoint API into JSON format.
     """
 
     def toJSON(self, data: str):
