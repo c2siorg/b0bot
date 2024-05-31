@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import dotenv_values
 from flask import jsonify
 from langchain.chains import LLMChain
@@ -93,27 +94,21 @@ class NewsService:
 
         prompt = PromptTemplate.from_template(template)
 
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a news analyzer that will read the given cyber security news and return the answer based on the user's requirement.",
-            },
-            {"role": "user", "content": str(news_data)},
-            {"role": "assistant","content":"I have read the news you provided. Now please give me your keywords."},
-            {"role": "user", "content": str(user_keywords)},
-            {"role": "assistant","content":"I have read the keywords you provided. Now please tell me how you want me to generate the answers."},
-            {"role": "user","content":"""Please give me a list of the most recent cybersecurity news based on the news and keyword given above.
-                            Indicate the source and date.
-                            Each news should be strictly in the format of {news_format}.
-                            Your reply should be news-only, without adding any of your conversational content.
-                            Do not use bullet points.
-                            Do not use regex.
-                            Only give the output in the required format.
-                            Do not stop generating the answer until it is complete.
-                            Return at most {news_number} news.""".format(
-                                news_format=self.news_format, news_number=self.news_number
-                            )}
-        ]
+        # Load the messages template from the JSON file
+        messages_template_path = 'prompts/withkey.json'
+        messages = self.load_json_file(messages_template_path)
+
+        # Replace placeholders in the messages
+        for message in messages:
+            if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
+                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
+            if message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
+                message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
+            if message['role'] == 'user' and '{news_format}' in message['content']:
+                message['content'] = message['content'].replace('{news_format}', self.news_format)
+            if message['role'] == 'user' and '{news_number}' in message['content']:
+                message['content'] = message['content'].replace('{news_number}', str(self.news_number))
+
 
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
         output=llm_chain.invoke(messages)
