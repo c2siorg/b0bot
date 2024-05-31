@@ -45,25 +45,19 @@ class NewsService:
 
         prompt = PromptTemplate.from_template(template)
 
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a news analyzer that will read the given cyber security news and return the answer based on the user's requirement.",
-            },
-            {"role": "user", "content": str(news_data)},
-            {"role": "assistant","content":"I have read the news you provided. Now please tell me your request."},
-            {"role": "user","content":"""Please give me a list of the most recent cybersecurity news based on the news given above.
-                            Indicate the source and date.
-                            Each news should be strictly in the format of {news_format}.
-                            Your reply should be news-only, without adding any of your conversational content.
-                            Do not use bullet points.
-                            Do not use regex.
-                            Only give the output in the required format.
-                            Do not stop generating the answer until it is complete.
-                            Return at most {news_number} news.""".format(
-                                news_format=self.news_format, news_number=self.news_number
-                            )}
-        ]
+        # Load the messages template from the JSON file
+        messages_template_path = 'prompts/withoutkey.json'
+        messages = self.load_json_file(messages_template_path)
+
+        # Replace placeholders in the messages
+        for message in messages:
+            if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
+                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
+            if message['role'] == 'user' and '{news_format}' in message['content']:
+                message['content'] = message['content'].replace('{news_format}', self.news_format)
+            if message['role'] == 'user' and '{news_number}' in message['content']:
+                message['content'] = message['content'].replace('{news_number}', str(self.news_number))
+
 
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
         output=llm_chain.invoke(messages)
@@ -136,6 +130,15 @@ class NewsService:
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
+    
+    """
+    Load JSON file
+    """
+    
+    def load_json_file(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return data
 
     """
     Convert news given by OpenAI API into JSON format.
