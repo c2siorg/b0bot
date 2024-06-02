@@ -1,32 +1,34 @@
+import os
+import json
 from dotenv import dotenv_values
 from flask import jsonify
-
-# import json
-from langchain.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
+from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
-from langchain.chains import LLMChain, SimpleSequentialChain
+from langchain_community.llms import HuggingFaceEndpoint
+
 from models.NewsModel import CybernewsDB
-
-
+env_vars = dotenv_values(".env")
+HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
+os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
     def __init__(self) -> None:
         self.db = CybernewsDB()
-        self.OPENAI_API_KEY = dotenv_values(".env").get("OPENAI_API_KEY")
-        self.llm = ChatOpenAI(temperature=0.1, openai_api_key=self.OPENAI_API_KEY)
-        # fixed format for answer
+        repo_id = "mistralai/Mistral-7B-Instruct-v0.2" # loading the llm
+
+        self.llm = HuggingFaceEndpoint(
+                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
+            )
         self.news_format = "title [source, date(MM/DD/YYYY), news url];"
         self.news_number = 10
 
     """
-    Return news without considering keywords
+    Return news while checking if keyword has been specified or not
     """
 
-    def getNews(self):
-        # fetch news data from db:
-        # only fetch data with valid `author` and `newsDate`
-        # drop field "id" from collection
+    def getNews(self, user_keywords=None):
+    # Fetch news data from db:
+    # Only fetch data with valid `author` and `newsDate`
+    # Drop field "id" from collection
         news_data = self.db.get_news_collections().find(
             {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
             {
@@ -39,100 +41,60 @@ class NewsService:
         )
         news_data = list(news_data)
 
-        news = self.llm(
-            [
-                SystemMessage(
-                    content="You are a news analyzer that will read the given cyber security news and return the answer based on the user's requirement."
-                ),
-                HumanMessage(content=str(news_data)),
-                AIMessage(
-                    content="I have read the news you provided. Now please tell me your request."
-                ),
-                HumanMessage(
-                    content="""Please give me a list of the most recent cybersecurity news based on the news given above.
-                    Indicate the source and date.
-                    Each news should be strictly in the format of {news_format}.
-                    Your reply should be news-only, without adding any of your conversational content.
-                    Do not use bullet points.
-                    Do not stop generating the answer until it is complete.
-                    Return at most {news_number} news.""".format(
-                        news_format=self.news_format, news_number=self.news_number
-                    )
-                ),
-            ]
-        )
+        template = """Question: {question}
+        Answer: Let's think step by step."""
 
-        print(news.content)
+        prompt = PromptTemplate.from_template(template)
 
-        # convert news data into JSON format
-        news_JSON = self.toJSON(news.content)
+        # Determine which messages template to load
+        if user_keywords:
+            messages_template_path = 'prompts/withkey.json'
+        else:
+            messages_template_path = 'prompts/withoutkey.json'
 
-        return news_JSON
+        # Load the messages template from the JSON file
+        messages = self.load_json_file(messages_template_path)
 
-    """
-    return news based on certain keywords
-    """
+        # Replace placeholders in the messages
+        for message in messages:
+            if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
+                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
+            if user_keywords and message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
+                message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
+            if message['role'] == 'user' and '{news_format}' in message['content']:
+                message['content'] = message['content'].replace('{news_format}', self.news_format)
+            if message['role'] == 'user' and '{news_number}' in message['content']:
+                message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
-    def getNewsWithKeywords(self, user_keywords):
-        # fetch news data from db:
-        # only fetch data with valid `author` and `newsDate`
-        # drop field "id" from collection
-        news_data = self.db.get_news_collections().find(
-            {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
-            {
-                "headlines": 1,
-                "newsDate": 1,
-                "author": 1,
-                "newsURL": 1,
-                "_id": 0,
-            },
-        )
-        news_data = list(news_data)
+        # Create the LLMChain with the prompt and llm
+        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
+        output = llm_chain.invoke(messages)
+        print(output['text'])
 
-        news = self.llm(
-            [
-                SystemMessage(
-                    content="You are a news analyzer that will read the given cyber security news and return the answer based on the user's requirement."
-                ),
-                HumanMessage(content=str(news_data)),
-                AIMessage(
-                    content="OK. I have read the news you provided. Now please give me your keywords."
-                ),
-                HumanMessage(content=str(user_keywords)),
-                AIMessage(
-                    content="OK. I have read the keywords you provided. Now please tell me how you want me to generate the answers."
-                ),
-                HumanMessage(
-                    content="""Please give me the most recent cybersecurity news related to the keywords based on the news I provided.
-                    Indicate the source and date;
-                    Each news should be strictly in the format of {news_format}.
-                    Your reply should be news-only, without adding any of your conversational content.
-                    Do not use bullet points.
-                    Do not stop generating the answer until it is complete.
-                    Return at most {news_number} news.
-                    Return nothing if there is no news related to the keywords.""".format(
-                        news_format=self.news_format, news_number=self.news_number
-                    )
-                ),
-            ]
-        )
-
-        print(news.content)
-
-        # convert news data into JSON format
-        news_JSON = self.toJSON(news.content)
+        # Convert news data into JSON format
+        news_JSON = self.toJSON(output['text'])
 
         return news_JSON
 
+ 
     """
     deal requests with wrong route
     """
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
+    
+    """
+    Load JSON file
+    """
+    
+    def load_json_file(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return data
 
     """
-    Convert news given by OpenAI API into JSON format.
+    Convert news given by Huggingface endpoint API into JSON format.
     """
 
     def toJSON(self, data: str):
@@ -140,17 +102,25 @@ class NewsService:
             return {}
         news_list = data.split("\n")
         news_list_json = []
-
+        news_list.pop(0)
         for item in news_list:
             # Avoid dirty data
             if len(item) == 0:
                 continue
             # Split the string at the first occurrence of '('
-            title, remaining = item.split("[", 1)
+            if "[" in item:
+                title, remaining = item.split("[", 1)
+            else:
+                title = item
+                remaining = ""
             title = title.strip(' "')
-
             # Extract the source by splitting at ',' and removing leading/trailing whitespace
-            source, date, url = remaining.split(",")
+            if "," not in remaining:
+                source = "N/A"
+                date = "N/A"
+                url = "N/A"
+            else:
+                source, date, url = remaining.split(",")
 
             source = source.strip(' "')
             date = date.strip(' "')

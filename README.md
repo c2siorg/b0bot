@@ -9,18 +9,17 @@
 
 https://www.mongodb.com/atlas/database
 
-3. Set up your OpenAI API account
+3. Set up your HuggingFace account
 
-https://platform.openai.com/docs/overview
+https://huggingface.co/
 
 
-4. Create `.env` file in the root directory
+4. Add huggingface token in `.env` file
 
 ```
-# ./env
 
-# OpenAI
-OPENAI_API_KEY='[Your OpenAI API Key here]'
+# HuggingFace
+HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
 
 # MongoDB Atlas
 DB_PASSWORD='[Your database password here]'
@@ -47,6 +46,8 @@ Or, run `./db_update/Update.py` manually in local.
 /news
 /news_keywords?keywords=[Place news keywords here]
 ```
+> [!IMPORTANT]
+> The interface will only work if you specify the one of the avaialble paths above.
 
 In this project, our objective is to develop a CyberSecurity News API tailored for automated bots on social media platforms.
 
