@@ -5,6 +5,13 @@ routes = Blueprint("routes", __name__)
 news_controller = NewsController()
 
 """
+home page route
+"""
+@routes.route("/", methods=["GET"])
+def home_route():
+    return render_template("home.html")
+
+"""
 return news without considering keywords
 """
 
