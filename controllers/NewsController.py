@@ -17,7 +17,7 @@ class NewsController:
     """
 
     def getNewsWithKeywords(self, user_keywords):
-        return self.news_service.getNewsWithKeywords(user_keywords)
+        return self.news_service.getNews(user_keywords)
 
     """
     deal requests with wrong route

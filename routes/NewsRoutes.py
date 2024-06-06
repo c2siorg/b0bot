@@ -5,6 +5,13 @@ routes = Blueprint("routes", __name__)
 news_controller = NewsController()
 
 """
+home page route
+"""
+@routes.route("/", methods=["GET"])
+def home_route():
+    return render_template("home.html")
+
+"""
 return news without considering keywords
 """
 
@@ -22,7 +29,7 @@ return news based on certain keywords
 def getNewsWithKeywords_route():
     # get list of keywords as argument from User's request
     user_keywords = request.args.getlist("keywords")
-    return news_controller.getNews(user_keywords)
+    return news_controller.getNewsWithKeywords(user_keywords[0])
 
 
 """

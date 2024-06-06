@@ -51,7 +51,7 @@ class NewsService:
             messages_template_path = 'prompts/withkey.json'
         else:
             messages_template_path = 'prompts/withoutkey.json'
-
+       
         # Load the messages template from the JSON file
         messages = self.load_json_file(messages_template_path)
 
@@ -69,7 +69,6 @@ class NewsService:
         # Create the LLMChain with the prompt and llm
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
         output = llm_chain.invoke(messages)
-        print(output['text'])
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
@@ -120,11 +119,19 @@ class NewsService:
                 date = "N/A"
                 url = "N/A"
             else:
-                source, date, url = remaining.split(",")
+                parts = remaining.split(",")
 
-            source = source.strip(' "')
-            date = date.strip(' "')
-            url = url.strip(" ];")
+                source = "N/A"
+                date = "N/A"
+                url = "N/A"
+
+                # Update values if they are present
+                if len(parts) > 0:
+                    source = parts[0].strip(' "')
+                if len(parts) > 1:
+                    date = parts[1].strip(' "')
+                if len(parts) > 2:
+                    url = parts[2].strip(" ];")
 
             # Create a dictionary for each news item and append it to the news_list
             news_item = {
@@ -134,5 +141,6 @@ class NewsService:
                 "url": url,
             }
             news_list_json.append(news_item)
+  
 
         return jsonify(news_list_json)

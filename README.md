@@ -41,6 +41,8 @@ Or, run `./db_update/Update.py` manually in local.
 
 `flask --app app.py run`
 
+> By default, the home page will open. The routes have to be defined manually.
+
 8. Two available url paths
 ```
 /news
