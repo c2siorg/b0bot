@@ -18,7 +18,7 @@ class NewsService:
         self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
-        self.news_format = "title [source, date(MM/DD/YYYY), news url];"
+        self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
     """
@@ -99,6 +99,7 @@ class NewsService:
     def toJSON(self, data: str):
         if len(data) == 0:
             return {}
+        print(data)
         news_list = data.split("\n")
         news_list_json = []
         news_list.pop(0)
@@ -106,32 +107,34 @@ class NewsService:
             # Avoid dirty data
             if len(item) == 0:
                 continue
-            # Split the string at the first occurrence of '('
-            if "[" in item:
-                title, remaining = item.split("[", 1)
-            else:
-                title = item
-                remaining = ""
-            title = title.strip(' "')
+            # Remove leading and trailing square brackets and split by comma and strip extra spaces
+            data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
+
+            # Assign default values for missing elements
+            title = data_list[0][2:] if len(data_list) > 0 else "No title provided"
+            source = data_list[1] if len(data_list) > 1 else "No source provided"
+            date = data_list[2] if len(data_list) > 2 else "No date provided"
+            url = data_list[3] if len(data_list) > 3 else "No URL provided"
+
             # Extract the source by splitting at ',' and removing leading/trailing whitespace
-            if "," not in remaining:
-                source = "N/A"
-                date = "N/A"
-                url = "N/A"
-            else:
-                parts = remaining.split(",")
+            # if "," not in remaining:
+            #     source = "N/A"
+            #     date = "N/A"
+            #     url = "N/A"
+            # else:
+            #     parts = remaining.split(",")
 
-                source = "N/A"
-                date = "N/A"
-                url = "N/A"
+            #     source = "N/A"
+            #     date = "N/A"
+            #     url = "N/A"
 
-                # Update values if they are present
-                if len(parts) > 0:
-                    source = parts[0].strip(' "')
-                if len(parts) > 1:
-                    date = parts[1].strip(' "')
-                if len(parts) > 2:
-                    url = parts[2].strip(" ];")
+            #     # Update values if they are present
+            #     if len(parts) > 0:
+            #         source = parts[0].strip(' "')
+            #     if len(parts) > 1:
+            #         date = parts[1].strip(' "')
+            #     if len(parts) > 2:
+            #         url = parts[2].strip(" ];")
 
             # Create a dictionary for each news item and append it to the news_list
             news_item = {
