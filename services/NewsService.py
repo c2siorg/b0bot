@@ -72,7 +72,7 @@ class NewsService:
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
-
+  
         return news_JSON
 
  
@@ -141,6 +141,5 @@ class NewsService:
                 "url": url,
             }
             news_list_json.append(news_item)
-  
 
-        return jsonify(news_list_json)
+        return news_list_json

@@ -17,7 +17,8 @@ return news without considering keywords
 
 @routes.route("/news", methods=["GET"])
 def getNews_route():
-    return news_controller.getNews()
+    news = news_controller.getNews()
+    return render_template("news.html", data=news)
 
 
 """
