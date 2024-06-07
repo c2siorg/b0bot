@@ -112,10 +112,11 @@ class NewsService:
 
             # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
+            end_index = data_list[3].find(']') if len(data_list) > 2 else -1
             title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
             source = data_list[1] if len(data_list) > 1 else "No source provided"
             date = data_list[2] if len(data_list) > 2 else "No date provided"
-            url = data_list[3] if len(data_list) > 3 else "No URL provided"
+            url = data_list[3][:end_index-1] if len(data_list) > 3 else "No URL provided"
 
             news_item = {
                 "title": title,

@@ -6,15 +6,51 @@
     <title>News Feed</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin-top: 30px;
+        }
+        .container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            border: 2px solid #000; /* Black border */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
         .news-card {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #000; /* Black border */
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
         .news-title {
-            font-size: 1.2rem;
+            font-size: 1.6rem;
+            color: #333;
+            margin-bottom: 10px;
         }
         .news-date, .news-source {
             font-size: 0.9rem;
-            color: gray;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .card-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        .card-link:hover {
+            color: #0056b3;
+        }
+        .text-muted {
+            color: #888;
         }
     </style>
 </head>

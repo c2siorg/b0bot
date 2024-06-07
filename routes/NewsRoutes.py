@@ -31,7 +31,7 @@ def getNewsWithKeywords_route():
     # get list of keywords as argument from User's request
     user_keywords = request.args.getlist("keywords")
     data = news_controller.getNewsWithKeywords(user_keywords[0])
-    return render_template("news_key.html", data=data,keywaord=user_keywords[0])
+    return render_template("news_key.html", data=data,keyword=user_keywords[0])
 
 
 """
