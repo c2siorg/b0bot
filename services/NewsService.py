@@ -18,7 +18,7 @@ class NewsService:
         self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
-        self.news_format = "title [source, date(MM/DD/YYYY), news url];"
+        self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
     """
@@ -72,7 +72,7 @@ class NewsService:
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
-
+  
         return news_JSON
 
  
@@ -106,34 +106,18 @@ class NewsService:
             # Avoid dirty data
             if len(item) == 0:
                 continue
-            # Split the string at the first occurrence of '('
-            if "[" in item:
-                title, remaining = item.split("[", 1)
-            else:
-                title = item
-                remaining = ""
-            title = title.strip(' "')
-            # Extract the source by splitting at ',' and removing leading/trailing whitespace
-            if "," not in remaining:
-                source = "N/A"
-                date = "N/A"
-                url = "N/A"
-            else:
-                parts = remaining.split(",")
+            # Remove leading and trailing square brackets and split by comma and strip extra spaces
+            data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
+            data_list = [val.strip() for val in data_list]
 
-                source = "N/A"
-                date = "N/A"
-                url = "N/A"
+            # Assign default values for missing elements
+            start_index = data_list[0].find('[') if len(data_list) > 0 else -1
+            end_index = data_list[3].find(']') if len(data_list) > 2 else -1
+            title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
+            source = data_list[1] if len(data_list) > 1 else "No source provided"
+            date = data_list[2] if len(data_list) > 2 else "No date provided"
+            url = data_list[3][:end_index-1] if len(data_list) > 3 else "No URL provided"
 
-                # Update values if they are present
-                if len(parts) > 0:
-                    source = parts[0].strip(' "')
-                if len(parts) > 1:
-                    date = parts[1].strip(' "')
-                if len(parts) > 2:
-                    url = parts[2].strip(" ];")
-
-            # Create a dictionary for each news item and append it to the news_list
             news_item = {
                 "title": title,
                 "source": source,
@@ -141,6 +125,6 @@ class NewsService:
                 "url": url,
             }
             news_list_json.append(news_item)
-  
 
-        return jsonify(news_list_json)
+        news_list_json.pop()
+        return news_list_json

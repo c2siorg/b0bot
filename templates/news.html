@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Feed</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin-top: 30px;
+        }
+        .container {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            border: 2px solid #000; /* Black border */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .news-card {
+            margin-bottom: 30px;
+            border: 1px solid #000; /* Black border */
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+        .news-title {
+            font-size: 1.6rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .news-date, .news-source {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .card-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        .card-link:hover {
+            color: #0056b3;
+        }
+        .text-muted {
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">Latest News</h1>
+        <div class="row">
+            {% for item in data %}
+            <div class="col-md-6 news-card">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title news-title">{{ item.title }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted news-date">{{ item.date }}</h6>
+                        <p class="card-text news-source">{{ item.source }}</p>
+                        {% if item.url != 'N/A' %}
+                        <a href="{{ item.url }}" class="card-link" target="_blank">Read more</a>
+                        {% else %}
+                        <span class="text-muted">No URL provided</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

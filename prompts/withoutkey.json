@@ -13,6 +13,6 @@
     },
     {
         "role": "user",
-        "content": "Please give me a list of the most recent cybersecurity news based on the news given above. Indicate the source and date. Each news should be strictly in the format of {news_format}. Your reply should be news-only, without adding any of your conversational content. Do not use bullet points. Do not use regex. Only give the output in the required format. Do not stop generating the answer until it is complete. Return at most {news_number} news."
+        "content": "Please give me a list of the most recent cybersecurity news based on the news given above. Indicate the source and date. Each news should be strictly in the format of {news_format}. Your reply should be news-only, without adding any of your conversational content. Do not use bullet points OR number list. Do not use regex. Only give the output in the required format. Do not stop generating the answer until it is complete. Return at most {news_number} news."
     }
 ]
