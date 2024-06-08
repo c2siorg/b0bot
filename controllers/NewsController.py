@@ -1,8 +1,7 @@
 from services.NewsService import NewsService
 
-
 class NewsController:
-    def __init__(self,model_name) -> None:
+    def __init__(self,model_name) :
         self.news_service = NewsService(model_name)
 
     """
