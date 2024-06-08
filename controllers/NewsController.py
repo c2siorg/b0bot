@@ -2,8 +2,8 @@ from services.NewsService import NewsService
 
 
 class NewsController:
-    def __init__(self) -> None:
-        self.news_service = NewsService()
+    def __init__(self,model_name) -> None:
+        self.news_service = NewsService(model_name)
 
     """
     return news without considering keywords
