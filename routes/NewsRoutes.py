@@ -27,6 +27,14 @@ def mistralai_route():
     return render_template("gemma.html")
 
 """
+setting LLM to llama-2
+"""
+@routes.route("/llama", methods=["GET"])
+def mistralai_route():
+    news_controller = NewsController("llama")
+    return render_template("llama.html")
+
+"""
 return news without considering keywords
 """
 
