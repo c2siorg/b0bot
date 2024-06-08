@@ -1,5 +1,6 @@
 {
     "mistralai": "mistralai/Mistral-7B-Instruct-v0.2",
+    "gemma": "google/gemma-2b",
     "another_llm": "another/LLM-Model",
     "yet_another_llm": "yet/another/LLM-Model"
 }
