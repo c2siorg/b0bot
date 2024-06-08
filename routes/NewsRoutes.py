@@ -11,36 +11,22 @@ def home_route():
     return render_template("home.html")
 
 """
-setting LLM to mistralAI
+set route for different LLM models
 """
-@routes.route("/mistralai", methods=["GET"])
-def mistralai_route():
-    news_controller = NewsController("mistralai")
-    return render_template("mistral.html")
+@routes.route("/<llm_name>", methods=["GET"])
+def set_llm_route(llm_name):
+    g.news_controller = NewsController(llm_name)
+    return render_template(f"{llm_name}.html")
 
-"""
-setting LLM to gemma-2b
-"""
-@routes.route("/gemma", methods=["GET"])
-def mistralai_route():
-    news_controller = NewsController("gemma")
-    return render_template("gemma.html")
-
-"""
-setting LLM to llama-2
-"""
-@routes.route("/llama", methods=["GET"])
-def mistralai_route():
-    news_controller = NewsController("llama")
-    return render_template("llama.html")
 
 """
 return news without considering keywords
 """
 
-@routes.route("/news", methods=["GET"])
-def getNews_route():
-    news = news_controller.getNews()
+@routes.route("/<llm_name>/news", methods=["GET"])
+def getNews_route(llm_name):
+    g.news_controller = NewsController(llm_name)
+    news = g.news_controller.getNews()
     return render_template("news.html", data=news)
 
 
@@ -49,11 +35,11 @@ return news based on certain keywords
 """
 
 
-@routes.route("/news_keywords", methods=["GET"])
-def getNewsWithKeywords_route():
+@routes.route("/<llm_name>/news_keywords", methods=["GET"])
+def getNewsWithKeywords_route(llm_name):
     # get list of keywords as argument from User's request
     user_keywords = request.args.getlist("keywords")
-    data = news_controller.getNewsWithKeywords(user_keywords[0])
+    data = g.news_controller.getNewsWithKeywords(user_keywords[0])
     return render_template("news_key.html", data=data,keyword=user_keywords[0])
 
 
@@ -64,4 +50,4 @@ deal requests with wrong route
 
 @routes.errorhandler(404)
 def notFound_route(error):
-    news_controller.notFound(error)
+    g.news_controller.notFound(error)
