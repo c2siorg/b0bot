@@ -11,9 +11,14 @@ env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
-    def __init__(self) -> None:
+    def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
-        repo_id = "mistralai/Mistral-7B-Instruct-v0.2" # loading the llm
+
+        # Load the LLM configuration
+        with open('config/llm_config.json') as f:
+            llm_config = json.load(f)
+
+        repo_id = llm_config.get(model_name) # loading the llm
 
         self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN

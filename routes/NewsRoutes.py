@@ -1,8 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
-
 routes = Blueprint("routes", __name__)
-news_controller = NewsController()
+news_controller = NewsController("mistralai") # default model name
 
 """
 home page route
@@ -10,6 +9,14 @@ home page route
 @routes.route("/", methods=["GET"])
 def home_route():
     return render_template("home.html")
+
+"""
+setting LLM to mistralAI
+"""
+@routes.route("/mistralai", methods=["GET"])
+def mistralai_route():
+    news_controller = NewsController("mistralai")
+    return render_template("mistral.html")
 
 """
 return news without considering keywords
