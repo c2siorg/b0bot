@@ -22,7 +22,6 @@ def set_llm_route(llm_name):
 """
 return news without considering keywords
 """
-
 @routes.route("/<llm_name>/news", methods=["GET"])
 def getNews_route(llm_name):
     g.news_controller = NewsController(llm_name)
@@ -33,8 +32,6 @@ def getNews_route(llm_name):
 """
 return news based on certain keywords
 """
-
-
 @routes.route("/<llm_name>/news_keywords", methods=["GET"])
 def getNewsWithKeywords_route(llm_name):
     # get list of keywords as argument from User's request
@@ -46,8 +43,6 @@ def getNewsWithKeywords_route(llm_name):
 """
 deal requests with wrong route
 """
-
-
 @routes.errorhandler(404)
 def notFound_route(error):
     g.news_controller.notFound(error)
