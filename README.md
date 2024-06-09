@@ -43,10 +43,20 @@ Or, run `./db_update/Update.py` manually in local.
 
 > By default, the home page will open. The routes have to be defined manually.
 
+8. We have added support for the following routes:
+```
+/llama          # Loads the Meta-Llama-3-8B-Instruct
+/gemma          # Loads the Gemma-2b
+/mistralai      # Loads the Mistral-7B-Instruct-v0.2
+``` 
+> [!NOTE]
+> The Huggingface token you are using must have access to the LLama3 model listed above.
+> You can do so by visiting this [link](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct).
+
 8. Two available url paths
 ```
-/news
-/news_keywords?keywords=[Place news keywords here]
+/<llm-name>/news
+/<llm-name>/news_keywords?keywords=[Place news keywords here]
 ```
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the avaialble paths above.
