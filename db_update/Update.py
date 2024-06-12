@@ -34,6 +34,8 @@ newsBox["malware_news"] = news.get_news("malware")
 
 newsBox["security_news"] = news.get_news("security")
 
+newsBox["data_breach_news"] = news.get_news("dataBreach")   
+
 
 """
 News Format:
@@ -48,7 +50,7 @@ news = {
     "newsDate": "",
 }
 
-Notice: "id" should be removed before the news is inserted into the database.
+Notice: "id" should be removed before the news is inserted into the database. newsImgURL also not important right now.
 """
 
 # db has limited storage space(512mb), clean up old news before fetching new news.
@@ -58,4 +60,5 @@ collection.delete_many({})
 for newsType in newsBox.keys():
     for news in newsBox[newsType]:
         news.pop("id")
+        news.pop("newsImgURL")
         collection.insert_one(news)
