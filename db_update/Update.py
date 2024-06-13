@@ -6,10 +6,13 @@ For now, Python package `cybernews` will be used for fetching news data from the
 Once the part of API service is completed, this part (news db updating) will begin by implementing web scraping logic 
 based on the code of `cybernews` pacakge.
 """
-
+import sys
+import os
 from dotenv import dotenv_values
 from pymongo import MongoClient
-from cybernews.cybernews import CyberNews
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from cybernews.CyberNews import CyberNews
 
 # MongoDB Database connection
 DB_PASSWORD = dotenv_values(".env").get("DB_PASSWORD")

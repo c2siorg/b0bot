@@ -3,7 +3,7 @@
 """
 import unittest
 
-from cybernews.cybernews import CyberNews
+from cybernews.CyberNews import CyberNews
 
 
 class TestCyberNews(unittest.TestCase):
