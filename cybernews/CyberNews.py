@@ -3,7 +3,6 @@
 """
 from utils.extractor import Extractor
 
-
 class CyberNews:
     def __init__(self) -> None:
         self._extractor = Extractor()
@@ -207,87 +206,7 @@ class CyberNews:
                         }
                     },
                 ]
-            },
-            {
-                "business": [
-                    {
-                        "https://ciosea.economictimes.indiatimes.com/news/business-analytics": {
-                            "headlines": "article.desc div h3.heading",
-                            "author": None,
-                            "fullNews": "article.desc div p.desktop-view",
-                            "newsImg": ".desc figure a img",
-                            "newsURL": ".desc figure a",
-                            "date": None,
-                        }
-                    }
-                ]
-            },
-            {
-                "mobility": [
-                    {
-                        "https://ciosea.economictimes.indiatimes.com/tag/mobility": {
-                            "headlines": "article.desc div h3.heading",
-                            "author": None,
-                            "fullNews": "article.desc div p.desktop-view",
-                            "newsImg": ".desc figure a img",
-                            "newsURL": ".desc figure a",
-                            "date": None,
-                        }
-                    }
-                ]
-            },
-            {
-                "research": [
-                    {
-                        "https://ciosea.economictimes.indiatimes.com/tag/research": {
-                            "headlines": "article.desc div h3.heading",
-                            "author": None,
-                            "fullNews": "article.desc div p.desktop-view",
-                            "newsImg": ".desc figure a img",
-                            "newsURL": ".desc figure a",
-                            "date": None,
-                        }
-                    }
-                ]
-            },
-            {
-                "socialMedia": [
-                    {
-                        "https://telecom.economictimes.indiatimes.com/search/social": {
-                            "headlines": "article.desc div h3.heading",
-                            "author": None,
-                            "fullNews": "article.desc div p.desktop-view",
-                            "newsImg": ".desc figure a img",
-                            "newsURL": ".desc figure a",
-                            "date": None,
-                        }
-                    }
-                ]
-            },
-            {
-                "corporate": [
-                    {
-                        "https://ciosea.economictimes.indiatimes.com/news/corporate": {
-                            "headlines": "article.desc div h3.heading",
-                            "author": None,
-                            "fullNews": "article.desc div p.desktop-view",
-                            "newsImg": ".desc figure a img",
-                            "newsURL": ".desc figure a",
-                            "date": None,
-                        }
-                    },
-                    {
-                        "https://telecom.economictimes.indiatimes.com/news/industry": {
-                            "headlines": "article.desc div h3.heading",
-                            "author": None,
-                            "fullNews": "article.desc div p.desktop-view",
-                            "newsImg": ".desc figure a img",
-                            "newsURL": ".desc figure a",
-                            "date": None,
-                        }
-                    },
-                ]
-            },
+            }
         ]
 
     @property

@@ -1,6 +1,5 @@
 from config.Database import client
 
-
 class CybernewsDB:
     def __init__(self):
         self.client = client
