@@ -1,7 +1,7 @@
 """
     Main Class for Extracting News
 """
-from utils.extractor import Extractor
+from cybernews.extractor import Extractor
 
 class CyberNews:
     def __init__(self) -> None:
