@@ -6,10 +6,13 @@ For now, Python package `cybernews` will be used for fetching news data from the
 Once the part of API service is completed, this part (news db updating) will begin by implementing web scraping logic 
 based on the code of `cybernews` pacakge.
 """
-
+import sys
+import os
 from dotenv import dotenv_values
 from pymongo import MongoClient
-from cybernews.cybernews import CyberNews
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from cybernews.CyberNews import CyberNews
 
 # MongoDB Database connection
 DB_PASSWORD = dotenv_values(".env").get("DB_PASSWORD")
@@ -34,6 +37,8 @@ newsBox["malware_news"] = news.get_news("malware")
 
 newsBox["security_news"] = news.get_news("security")
 
+newsBox["data_breach_news"] = news.get_news("dataBreach")   
+
 
 """
 News Format:
@@ -48,7 +53,7 @@ news = {
     "newsDate": "",
 }
 
-Notice: "id" should be removed before the news is inserted into the database.
+Notice: "id" should be removed before the news is inserted into the database. newsImgURL also not important right now.
 """
 
 # db has limited storage space(512mb), clean up old news before fetching new news.
@@ -58,4 +63,5 @@ collection.delete_many({})
 for newsType in newsBox.keys():
     for news in newsBox[newsType]:
         news.pop("id")
+        news.pop("newsImgURL")
         collection.insert_one(news)
