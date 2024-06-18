@@ -53,6 +53,16 @@ class CyberNews:
                             "date": None,
                         }
                     },
+                    {
+                        "https://cyware.com/search?search=data%20breach": {
+                            "headlines": "h1.cy-card__title",
+                            "author": "a[href*='source_name']",
+                            "fullNews": "div.cy-card__description",
+                            "newsImg": None,
+                            "newsURL": "a[href*='articles']",
+                            "date": "span.cy-card__meta",
+                        }
+                    },
                 ],
             },
             {
@@ -75,6 +85,16 @@ class CyberNews:
                             "newsImg": ".desc figure a img",
                             "newsURL": ".desc figure a",
                             "date": None,
+                        }
+                    },
+                    {
+                        "https://cyware.com/search?search=cyber%20attack": {
+                            "headlines": "h1.cy-card__title",
+                            "author": "a[href*='source_name']",
+                            "fullNews": "div.cy-card__description",
+                            "newsImg": None,
+                            "newsURL": "a[href*='articles']",
+                            "date": "span.cy-card__meta"
                         }
                     },
                 ],
@@ -101,6 +121,16 @@ class CyberNews:
                             "date": None,
                         }
                     },
+                    {
+                        "https://cyware.com/alerts/filter?alert_type=A&category_slug=malware-and-vulnerabilities-news":{
+                            "headlines": "h1.cy-card__title",
+                            "author": "a[href*='source_name']",
+                            "fullNews": "div.cy-card__description",
+                            "newsImg": None,
+                            "newsURL": "a[href*='articles']",
+                            "date": "span.cy-card__meta"
+                        }
+                    },
                 ],
             },
             {
@@ -114,8 +144,18 @@ class CyberNews:
                             "newsURL": "a.story-link",
                             "date": ".item-label",
                         }
-                    }
-                ]
+                    },
+                    {
+                        "https://www.infosecurity-magazine.com/malware/": {
+                            "headlines": "h3.content-headline a",
+                            "author": None,
+                            "fullNews": "p.content-teaser",
+                            "newsImg": "img.content-thumb",
+                            "newsURL": "h3.content-headline a",
+                            "date": "time"
+                        }
+                    },
+                ],
             },
             {
                 "security": [
