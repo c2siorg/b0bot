@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -47,20 +47,29 @@
             background-color: #0288d1; /* Darker blue on hover */
         }
     </style>
+    <script src="{{ url_for('static', filename='js/content.js') }}"></script>
 </head>
 <body>
-    <h1><b>Welcome to b0bot!</b></h1>
-    <h3>You are now using Llama-3 as your base LLM</h3>
+    <h1 id="title"><b>Welcome to b0bot!</b></h1>
+    <h3 id="subtitle">You are now using <span id="baseLLM">an unknown LLM</span> as your base LLM</h3>
     <ul>
         <li><u>Two available URL paths:</u></li>
-        <li><a href="/llama/news"><code>/llama/news</code></a></li>
+        <li><a id="newsLink" href="#"><code>/news</code></a></li>
         <li>
-            <form action="/llama/news_keywords" method="GET">
-                <label for="keywords"><code>/llama/news_keywords?keywords=</code></label>
+            <form id="newsKeywordsForm" action="#" method="GET">
+                <label for="keywords"><code>/news_keywords?keywords=</code></label>
                 <input type="text" id="keywords" name="keywords" placeholder="Place news keywords here">
                 <input type="submit" value="Submit">
             </form>
         </li>
     </ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const baseLLM = "{{ llm_name }}";
+            console.log('baseLLM:', baseLLM);
+            renderContent(baseLLM);
+        });
+    </script>
 </body>
 </html>

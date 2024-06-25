@@ -10,13 +10,14 @@ home page route
 def home_route():
     return render_template("home.html")
 
+
 """
 set route for different LLM models
 """
 @routes.route("/<llm_name>", methods=["GET"])
 def set_llm_route(llm_name):
     g.news_controller = NewsController(llm_name)
-    return render_template(f"{llm_name}.html")
+    return render_template("llm.html", llm_name=llm_name)
 
 
 """
