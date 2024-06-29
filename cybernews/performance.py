@@ -29,14 +29,39 @@ class Performance:
             "Access-Control-Allow-Credentials": "true",
             "Content-Encoding": "gzip",
         }
+        self._spam_keywords = ["buy now", "click here", "subscribe", "limited offer"]
 
     def headers(self):
+        """
+        Return the headers for HTTP requests.
+        """
         return self._headers
 
     def remove_symbols(self, text: str) -> str:
+        """
+        Remove non-alphanumeric symbols from a given text.
+
+        Args:
+            text (Optional[str]): The text to clean.
+
+        Returns:
+            str: The cleaned text.
+        """ 
+        if not text:
+            return ""
         return re.sub(self.symbol_regex, "", text)
 
     def check_valid_date(self, date):
+        """
+        Check if a given date string matches the expected format.
+
+        Args:
+            date (str): The date string to check.
+            date_format (str): The expected date format.
+
+        Returns:
+            bool: True if the date is valid, False otherwise.
+        """
         date_format = "%b %d %Y"
         try:
             datetime.strptime(date, date_format)
@@ -44,8 +69,52 @@ class Performance:
         except ValueError:
             return False
 
-    def is_valid_author_name(self, date: str) -> bool:
-        return not self.check_valid_date(date)
+    def is_valid_author_name(self, name: str) -> bool:
+        """
+        Check if the given name is not a valid date, hence a valid author name.
+
+        Args:
+            name (str): The name to check.
+
+        Returns:
+            bool: True if the name is valid, False otherwise.
+        """
+        return not self.check_valid_date(name)
 
     def format_author_name(self, name: str) -> str:
-        return name.strip().replace("  ", " ")
+        """
+        Format the author name by stripping extra spaces.
+
+        Args:
+            name (str): The name to format.
+
+        Returns:
+            str: The formatted author name.
+        """
+        return " ".join(name.strip().split())
+    
+    def valid_url_check(self, url: str) -> bool:
+        """
+        Check if the URL is valid.
+
+        Args:
+            url (str): The URL to check.
+
+        Returns:
+            bool: True if the URL is valid, False otherwise.
+        """
+        return url.startswith("http://") or url.startswith("https://")
+
+    def spam_content_check(self, content: str) -> bool:
+        """
+        Check for spammy content in the text.
+
+        Args:
+            content (str): The content to check.
+
+        Returns:
+            bool: True if the content is spammy, False otherwise.
+        """
+        return any(keyword in content.lower() for keyword in self._spam_keywords)
+    
+

@@ -75,9 +75,23 @@ class Extractor(Performance):
 
     # Extracting Data From Single News
     def _extract_data_from_single_news(self, url: str, value: dict):
+        """
+        Extract data from a single news article.
+
+        Args:
+            url (str): The URL of the news article.
+            value (dict): The CSS selectors for extracting news data.
+
+        Returns:
+            list: A list of dictionaries with the extracted news data.
+        """
         news_data_from_single_news = []
-        response = self.session.get(url, timeout=20, headers=self.headers)
-        soup = BeautifulSoup(response.text, "lxml")
+        try:
+            response = self.session.get(url, timeout=20, headers=self.headers)
+            soup = BeautifulSoup(response.text, "lxml")
+        except (httpx.RequestError, httpx.TimeoutException) as e:
+            print(f"Request to {url} failed: {e}")
+            return []
         news_headlines = soup.select(value["headlines"])
         raw_news_author = (
             soup.select(value["author"]) if value["author"] is not None else ""
@@ -105,6 +119,12 @@ class Extractor(Performance):
             if self._check_ad(news_date):
                 continue
 
+            if not self.valid_url_check(news_url[index]["href"]):
+                continue
+
+            if self.spam_content_check(news_headlines[index].text.strip() + " " + news_full_news[index].text.strip()):
+                continue
+
             complete_news = {
                 "id": self.sorting.ordering_date(news_date),
                 "headlines": news_headlines[index].text.strip(),
@@ -116,7 +136,9 @@ class Extractor(Performance):
             }
             news_data_from_single_news.append(complete_news)
 
-        return news_data_from_single_news
+        # Remove duplicates before sorting
+        unique_news_data_from_single_news = self._remove_duplicates(news_data_from_single_news)
+        return self.sorting.ordering_news(unique_news_data_from_single_news)
 
     # Extracting Data Using Tags
     def data_extractor(self, news: list) -> list:
@@ -150,4 +172,27 @@ class Extractor(Performance):
                 except Exception as exc:
                     print(f"{url} generated an exception: {exc}")
 
-        return self.sorting.ordering_news(news_data)
+        # Remove duplicates before sorting
+        unique_news_data = self._remove_duplicates(news_data)
+        return self.sorting.ordering_news(unique_news_data)
+
+    # Removing Duplicates
+    def _remove_duplicates(self, news_data: list) -> list:
+        """
+        Remove duplicate news items based on specific criteria.
+
+        Args:
+            news_data (list): A list of dictionaries containing news data.
+
+        Returns:
+            list: A list with duplicate entries removed.
+        """
+        seen = set()
+        unique_news_data = []
+        for item in news_data:
+            # Use a tuple of fields that should be unique to identify duplicates
+            identifier = (item["headlines"], item["newsURL"], item["newsDate"])
+            if identifier not in seen:
+                seen.add(identifier)
+                unique_news_data.append(item)
+        return unique_news_data
