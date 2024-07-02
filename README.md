@@ -1,10 +1,10 @@
 <h1 align="center">B0Bot - CyberSecurity News API</h1>
 <p align="center">
   <br/><br/>
-  <a href="https://github.com/hywax/mafl/blob/main/CHANGELOG.md"><img src="https://img.shields.io/github/package-json/v/hywax/mafl?logo=hackthebox&color=609966&logoColor=fff" alt="Current Version"/></a>
-  <a target="_blank" href="https://github.com/hywax/mafl"><img src="https://img.shields.io/github/last-commit/hywax/mafl?logo=github&color=609966&logoColor=fff" alt="Last commit"/></a>
-  <a target="_blank" href="https://hub.docker.com/r/hywax/mafl"><img src="https://img.shields.io/docker/pulls/hywax/mafl?logo=docker&color=609966&logoColor=fff" alt="Docker pulls"/></a>
-  <a href="https://github.com/hywax/mafl/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-609966?logo=opensourceinitiative&logoColor=fff" alt="License MIT"/></a>
+  <a href="https://github.com/c2siorg/b0bot"><img src="https://img.shields.io/github/forks/c2siorg/b0bot?style=plastic" alt ="Forks"/></a>
+  <a href="https://github.com/c2siorg/b0bot"><img src="https://img.shields.io/github/stars/c2siorg/b0bot?style=plastic" alt ="Stars"/></a>
+  <a target="_blank" href="https://github.com/c2siorg/b0bot"><img src="https://img.shields.io/github/commit-activity/m/c2siorg/b0bot?style=plastic" alt="Commit Activity"/></a>
+  <a href="https://github.com/hywax/mafl/blob/main/LICENSE"><img src="https://img.shields.io/github/license/c2siorg/b0bot?style=plastic" alt="License MIT"/></a>
   <br/><br/>
 </p>
 <p>
@@ -24,25 +24,29 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 
 `pip install -r ./requirements.txt`
 
-2. Set up your MongoDB Atlas database
 
+2. Set up your MongoDB Atlas database
+```
 https://www.mongodb.com/atlas/database
+```
+
 
 3. Set up your HuggingFace account
-
+```
 https://huggingface.co/
+```
 
 
 4. Add huggingface token in `.env` file
 
 ```
-
 # HuggingFace
 HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
 
 # MongoDB Atlas
 DB_PASSWORD='[Your database password here]'
 ```
+
 
 5. Remember to replace the MongoDB connection string
 
@@ -51,10 +55,12 @@ DB_PASSWORD='[Your database password here]'
 client = MongoClient(f"mongodb+srv://b0bot:{DB_PASSWORD}@cluster0.zqgexb4.mongodb.net/") # Replace the string with yours
 ```
 
+
 6. Enrich/Update news data into your database
 
 Run `./db_update/Update.py` as a worker on a cloud service (e.g. heroku).
 Or, run `./db_update/Update.py` manually in local.
+
 
 7. Run the flask app
 
@@ -62,21 +68,25 @@ Or, run `./db_update/Update.py` manually in local.
 
 > By default, the home page will open. The routes have to be defined manually.
 
+
 8. We have added support for the following routes:
 ```
 /llama          # Loads the Meta-Llama-3-8B-Instruct
 /gemma          # Loads the Gemma-2b
 /mistralai      # Loads the Mistral-7B-Instruct-v0.2
 ``` 
+
 > [!NOTE]
 > The Huggingface token you are using must have access to the LLama3 model listed above.
 > You can do so by visiting this [link](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct).
+
 
 8. Two available url paths
 ```
 /<llm-name>/news
 /<llm-name>/news_keywords?keywords=[Place news keywords here]
 ```
+
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the avaialble paths above.
 
