@@ -67,7 +67,13 @@ It is a cutting-edge Flask-based API that grants seamless access to the latest c
 
 Once a user requests our API, it retrieves news data from our knowledge base and feeds it to the LLM. After the LLM processes the data, the API obtains the response and returns it in JSON format.
 
-# High-Level Architecture Diagram
+## App Screenshots
+
+| Home Page | LLM Page | News Page |
+| :--------:| :-------:| :---------:|
+| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) |
+
+## High-Level Architecture Diagram
 
 Our API lives inside a Flask API and is powered by LangChain and a Huggingface endpoint. 
 
@@ -78,3 +84,7 @@ In addition, to keep the knowledge base of news up to date, a scheduled script w
 <img width="984" alt="image" src="https://github.com/CoToYo/b0bot/assets/56789038/4e5fe460-a210-46e9-b490-caa02e34c3af">
 
 The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
+
+## Licensing
+
+The MIT License 2023
