@@ -1,4 +1,23 @@
-# B0Bot - CyberSecurity News API
+<h1 align="center">B0Bot - CyberSecurity News API</h1>
+<p align="center">
+  <br/><br/>
+  <a href="https://github.com/hywax/mafl/blob/main/CHANGELOG.md"><img src="https://img.shields.io/github/package-json/v/hywax/mafl?logo=hackthebox&color=609966&logoColor=fff" alt="Current Version"/></a>
+  <a target="_blank" href="https://github.com/hywax/mafl"><img src="https://img.shields.io/github/last-commit/hywax/mafl?logo=github&color=609966&logoColor=fff" alt="Last commit"/></a>
+  <a target="_blank" href="https://hub.docker.com/r/hywax/mafl"><img src="https://img.shields.io/docker/pulls/hywax/mafl?logo=docker&color=609966&logoColor=fff" alt="Docker pulls"/></a>
+  <a href="https://github.com/hywax/mafl/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-609966?logo=opensourceinitiative&logoColor=fff" alt="License MIT"/></a>
+  <br/><br/>
+</p>
+<p>
+B0Bot is a CyberSecurity News API tailored for automated bots on social media platforms. It is a cutting-edge Flask-based API that grants seamless access to the latest cybersecurity and hacker news. Users can effortlessly retrieve news articles either through specific keywords or without, streamlining the information acquisition process.
+Once a user requests our API, it retrieves news data from our knowledge base and feeds it to the LLM. After the LLM processes the data, the API obtains the response and returns it in JSON format. The API is powered by LangChain and a Huggingface endpoint, ensuring that users receive accurate and up-to-date information.
+</p>
+
+
+## App Screenshots
+
+| Home Page | LLM Page | News Page |
+| :--------:| :-------:| :---------:|
+| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) |
 
 ## Setup
 1. Install all necessary packages
@@ -61,17 +80,6 @@ Or, run `./db_update/Update.py` manually in local.
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the avaialble paths above.
 
-In this project, our objective is to develop a CyberSecurity News API tailored for automated bots on social media platforms.
-
-It is a cutting-edge Flask-based API that grants seamless access to the latest cybersecurity and hacker news. Users can effortlessly retrieve news articles either through specific keywords or without, streamlining the information acquisition process.
-
-Once a user requests our API, it retrieves news data from our knowledge base and feeds it to the LLM. After the LLM processes the data, the API obtains the response and returns it in JSON format.
-
-## App Screenshots
-
-| Home Page | LLM Page | News Page |
-| :--------:| :-------:| :---------:|
-| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) |
 
 ## High-Level Architecture Diagram
 
