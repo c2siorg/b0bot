@@ -15,11 +15,16 @@ PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
 pc = Pinecone(api_key=PINECONE_API)
 index_name = "cybernews-index"
 
+# Delete the index if it already exists, so as to save storage
+if index_name in pc.list_indexes().names():
+    pc.delete_index(index_name)
+    print(f"Deleted existing index: {index_name}")
+
 # Create or access the index
 if index_name not in pc.list_indexes():
     pc.create_index(
         name=index_name, 
-        dimension=768, 
+        dimension=384, 
         metric='cosine',
         spec=ServerlessSpec(
             cloud='aws',
@@ -30,12 +35,7 @@ if index_name not in pc.list_indexes():
 # Connect to the index
 index = pc.Index(index_name)
 
-# Delete all existing entries in the index
-existing_ids = index.fetch_all_ids()  # Hypothetical method; you might need to store your IDs elsewhere
-if existing_ids:
-    index.delete(existing_ids)
 
-# Load the embedding model
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Different types of news
@@ -83,6 +83,7 @@ for news_type, articles in newsBox.items():
         
         # Prepare the document ID (use unique identifiers from your data)
         document_id = article["id"]
+        document_id = str(document_id)
         
         # Prepare metadata
         metadata = {
