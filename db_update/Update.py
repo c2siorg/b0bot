@@ -1,7 +1,6 @@
 import sys
 import os
 from dotenv import dotenv_values
-# from pymongo import MongoClient
 from pinecone import Pinecone , ServerlessSpec
 from sentence_transformers import SentenceTransformer
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -35,6 +34,7 @@ if index_name not in pc.list_indexes():
 # Connect to the index
 index = pc.Index(index_name)
 
+namespace = "c2si"
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -96,7 +96,7 @@ for news_type, articles in newsBox.items():
         }
         
         # Upsert the vector with metadata into Pinecone
-        index.upsert([(document_id, vector, metadata)])
+        index.upsert([(document_id, vector, metadata)] , namespace=namespace)
         
         print(f"Inserted article ID: {document_id} with metadata into index: {index_name}")
 
