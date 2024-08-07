@@ -4,7 +4,7 @@ from cybernews.extractor import Extractor
 class CyberNews:
     def __init__(self) -> None:
         self._extractor = Extractor()
-        self._news_types = self.load_news_types_from_json('news_types.json')
+        self._news_types = self.load_news_types_from_json('cybernews/news_types.json')
 
     def load_news_types_from_json(self, json_file):
         with open(json_file, 'r', encoding='utf-8') as file:

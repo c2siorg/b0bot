@@ -1,6 +1,11 @@
 from dotenv import dotenv_values
-from pymongo import MongoClient
+from pinecone import Pinecone
+import os
+import sys
 
-DB_PASSWORD = dotenv_values(".env").get("DB_PASSWORD")
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-client = MongoClient(f"mongodb+srv://hardikgpu01:{DB_PASSWORD}@practice.pdylnhr.mongodb.net/")
+PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+
+client = Pinecone(api_key=PINECONE_API)
+index_name = "cybernews-index"
