@@ -18,8 +18,11 @@ class NewsService:
         with open('config/llm_config.json') as f:
             llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm
-
+        repo_id = llm_config.get(model_name) # loading the llm 
+        
+        if not repo_id:
+            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
+        
         self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
