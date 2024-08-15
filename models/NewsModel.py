@@ -8,25 +8,35 @@ class CybernewsDB:
         self.index = self.client.Index(self.index_name)
 
     def fetch_all_from_namespace(self, batch_size=100):
-        # pinecone.init(api_key=api_key)
-        index = client.Index(self.index_name)
         all_vectors = []
         start_cursor = None
 
+        # Fetch all vector IDs first
+        id_list = []
         while True:
-            response = index.fetch(limit=batch_size, cursor=start_cursor, include_metadata=True, namespace=self.namespace)
-            vectors = response.get('vectors', [])
-
-            if not vectors:
-                break
-
-            all_vectors.extend(vectors)
+            # Replace `query` with appropriate method to retrieve IDs if needed
+            response = self.index.query(
+                vector=[0]*384,  # Assuming 512 dimensions; replace with actual dimension
+                namespace=self.namespace,
+                top_k=batch_size,
+                include_metadata=False,
+                include_values=False,
+                cursor=start_cursor
+            )
+            ids = [match['id'] for match in response['matches']]
+            id_list.extend(ids)
             start_cursor = response.get('next_cursor')
-
             if not start_cursor:
                 break
+
+        # Fetch the vectors using the retrieved IDs
+        for i in range(0, len(id_list), batch_size):
+            batch_ids = id_list[i:i + batch_size]
+            response = self.index.fetch(ids=batch_ids, namespace=self.namespace)
+            vectors = response.get('vectors', [])
+            all_vectors.extend(vectors)
 
         return all_vectors
 
     def get_news_collections(self):
-        return self.fetch_all_from_namespace(self.index_name, self.namespace)
+        return self.fetch_all_from_namespace()
