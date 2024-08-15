@@ -37,17 +37,22 @@ class NewsService:
     # Fetch news data from db:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
-        news_data = self.db.get_news_collections().find(
-            {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
-            {
-                "headlines": 1,
-                "newsDate": 1,
-                "author": 1,
-                "newsURL": 1,
-                "_id": 0,
-            },
-        )
-        news_data = list(news_data)
+        news_data = self.db.get_news_collections()
+        news_data = news_data[:50]
+        print(len(news_data))
+        # .find(
+        #     {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
+        #     {
+        #         "headlines": 1,
+        #         "newsDate": 1,
+        #         "author": 1,
+        #         "newsURL": 1,
+        #         "_id": 0,
+        #     },
+        # )
+        # news_data = list(news_data)
+
+
 
         template = """Question: {question}
         Answer: Let's think step by step."""
@@ -118,9 +123,14 @@ class NewsService:
             data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
             data_list = [val.strip() for val in data_list]
 
+            for i in data_list:
+                print(i)
+                print("----")
+                
+            print(data_list)
             # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
-            end_index = data_list[3].find(']') if len(data_list) > 2 else -1
+            end_index = data_list[3].find(']') if len(data_list) > 3 else -1
             title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
             source = data_list[1] if len(data_list) > 1 else "No source provided"
             date = data_list[2] if len(data_list) > 2 else "No date provided"
