@@ -29,15 +29,13 @@ class CybernewsDB:
     
 
     def fetch_all_from_namespace(self, batch_size=100):
-        all_vectors = []
         start_cursor = None
         final_list = []
         # Fetch all vector IDs first
         id_list = []
         while True:
-            # Replace `query` with appropriate method to retrieve IDs if needed
             response = self.index.query(
-                vector=[0]*384,  # Assuming 512 dimensions; replace with actual dimension
+                vector=[0]*384,  
                 namespace=self.namespace,
                 top_k=batch_size,
                 include_metadata=False,
@@ -54,16 +52,13 @@ class CybernewsDB:
         for i in range(0, len(id_list), batch_size):
             batch_ids = id_list[i:i + batch_size]
             response = self.index.fetch(ids=batch_ids, namespace=self.namespace)
-            # print(type(response))
             vectors = response.get('vectors', [])
             key_list = vectors.keys()
             key_list = list(key_list)
 
             for i in key_list:
-                metadata_dict = vectors[i].get('metadata', {})  # Extract the metadata dictionary
-                final_list.append(metadata_dict)  # Append the entire metadata dictionary to the list
-
-        # print(final_list)
+                metadata_dict = vectors[i].get('metadata', {})  
+                final_list.append(metadata_dict)  
 
         return final_list
 
