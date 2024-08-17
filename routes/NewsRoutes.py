@@ -16,6 +16,8 @@ set route for different LLM models
 """
 @routes.route("/<llm_name>", methods=["GET"])
 def set_llm_route(llm_name):
+    if llm_name == "favicon.ico":
+        return "", 204  # No Content response for favicon requests
     g.news_controller = NewsController(llm_name)
     return render_template("llm.html", llm_name=llm_name)
 

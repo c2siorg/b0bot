@@ -18,8 +18,11 @@ class NewsService:
         with open('config/llm_config.json') as f:
             llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm
-
+        repo_id = llm_config.get(model_name) # loading the llm 
+        
+        if not repo_id:
+            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
+        
         self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
@@ -34,17 +37,8 @@ class NewsService:
     # Fetch news data from db:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
-        news_data = self.db.get_news_collections().find(
-            {"author": {"$ne": "N/A"}, "newsDate": {"$ne": "N/A"}},
-            {
-                "headlines": 1,
-                "newsDate": 1,
-                "author": 1,
-                "newsURL": 1,
-                "_id": 0,
-            },
-        )
-        news_data = list(news_data)
+        news_data = self.db.get_news_collections()
+        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
         template = """Question: {question}
         Answer: Let's think step by step."""
@@ -115,9 +109,14 @@ class NewsService:
             data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
             data_list = [val.strip() for val in data_list]
 
+            for i in data_list:
+                print(i)
+                print("----")
+                
+            print(data_list)
             # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
-            end_index = data_list[3].find(']') if len(data_list) > 2 else -1
+            end_index = data_list[3].find(']') if len(data_list) > 3 else -1
             title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
             source = data_list[1] if len(data_list) > 1 else "No source provided"
             date = data_list[2] if len(data_list) > 2 else "No date provided"

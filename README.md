@@ -25,10 +25,13 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 `pip install -r ./requirements.txt`
 
 
-2. Set up your MongoDB Atlas database
+2. Set up your Pinecone database
 ```
-https://www.mongodb.com/atlas/database
+https://www.pinecone.io/
 ```
+Login to Pinecone and create a new index with the name `news-index`. Then, add the Pinecone API key in the `.env` file.
+
+
 
 
 3. Set up your HuggingFace account
@@ -43,16 +46,16 @@ https://huggingface.co/
 # HuggingFace
 HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
 
-# MongoDB Atlas
-DB_PASSWORD='[Your database password here]'
+# Pinecone
+PINECONE_API_KEY='[Your pinecone api here]'
 ```
 
 
-5. Remember to replace the MongoDB connection string
+5. Remember to replace the Pinecone connection string
 
 ```
 # Example
-client = MongoClient(f"mongodb+srv://b0bot:{DB_PASSWORD}@cluster0.zqgexb4.mongodb.net/") # Replace the string with yours
+client = Pinecone(api_key={PINECONE_API}) # Replace the string with yours
 ```
 
 
