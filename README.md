@@ -15,9 +15,9 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 
 ## App Screenshots
 
-| Home Page | LLM Page | News Page |
+| Home Page | LLM Page | News Page | News Keywords Page |
 | :--------:| :-------:| :---------:|
-| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) |
+| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) | ![News Keywords Page](assets/news_keywords.png) |
 
 ## Setup
 1. Install all necessary packages
