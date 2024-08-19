@@ -8,43 +8,89 @@
         body {
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+            color: #ffffff;
+            text-align: center;
         }
         h1 {
-            text-align: center;
-            margin-top: 20px; /* Adjust as needed for spacing from the top */
+            font-size: 3em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        h3 {
+            font-size: 1.5em;
+            font-weight: 300;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+            border-bottom: 2px solid #ffd700;
         }
         ul {
-            list-style-type: none; /* Remove default bullets */
+            list-style-type: none;
             padding: 0;
+            text-align: center;
+            width: 100%;
         }
         li {
-            margin: 5px 0; /* Add some spacing between list items */
+            margin: 10px 0;
+            font-size: 1.1em;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease, transform 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 350px; /* Set a fixed width for uniform boxes */
+            margin: 10px auto; /* Center the list items */
+        }
+        li:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+        a:hover {
+            text-decoration: underline;
         }
         form {
-            margin: 10px 0; /* Add some spacing around the form */
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%; /* Ensure the form spans the full width */
+        }
+        label {
+            font-size: 1.1em;
+            color: #ffd700;
         }
         input[type="text"] {
-            padding: 10px; /* Add some padding to the input field */
-            border: 1px solid #ccc; /* Light grey border */
-            border-radius: 5px; /* Rounded corners */
-            width: 300px; /* Fixed width for the input field */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 60%; /* Adjusted to be flexible */
+            margin-right: 10px; /* Add some space between the input and button */
         }
         input[type="submit"] {
-            padding: 10px 15px; /* Add some padding to the button */
-            background-color: #03a9f4; /* Light blue background */
-            color: #fff; /* White text */
-            border: none; /* Remove border */
-            border-radius: 5px; /* Rounded corners */
-            cursor: pointer; /* Pointer cursor on hover */
-            transition: background-color 0.3s; /* Smooth transition for hover effect */
+            padding: 10px 15px;
+            background-color: #03a9f4;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
         }
         input[type="submit"]:hover {
-            background-color: #0288d1; /* Darker blue on hover */
+            background-color: #0288d1;
         }
     </style>
     <script src="{{ url_for('static', filename='js/content.js') }}"></script>
@@ -52,9 +98,9 @@
 <body>
     <h1 id="title"><b>Welcome to b0bot!</b></h1>
     <h3 id="subtitle">You are now using <span id="baseLLM">an unknown LLM</span> as your base LLM</h3>
+    <h3><b>Two available URL paths:</b></h3><br>
     <ul>
-        <li><u>Two available URL paths:</u></li>
-        <li><a id="newsLink" href="#"><code>/news</code></a></li>
+        <li><a id="newsLink" href="#"><code>/news</code></a></li><br>
         <li>
             <form id="newsKeywordsForm" action="#" method="GET">
                 <label for="keywords"><code>/news_keywords?keywords=</code></label>
