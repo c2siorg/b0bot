@@ -8,41 +8,93 @@
         body {
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+            color: #ffffff;
+            text-align: center;
         }
         h1 {
-            text-align: center;
-            margin-top: 20px; /* Adjust as needed for spacing from the top */
+            font-size: 3em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+        }
+        h3 {
+            font-size: 1.5em;
+            font-weight: 300;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 20px;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
         ul {
-            list-style-type: none; /* Remove default bullets */
+            list-style-type: none;
             padding: 0;
-            text-align: left;
+            text-align: center;
+            width: 100%;
         }
         li {
-            margin: 5px 0; /* Add some spacing between list items */
-            text-align: left;
+            margin: 10px 0;
+            font-size: 1.1em;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease, transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 300px; /* Set a fixed width for uniform boxes */
+            margin: 10px auto; /* Center the list items */
+        }
+        li:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+        }
+        a.icon-link {
+            color: #ffd700;
+            text-decoration: none;
+            font-size: 1.5em;
+            margin-right: 10px;
+            transition: transform 0.3s ease;
+        }
+        a.icon-link:hover {
+            transform: scale(1.2);
+        }
+        span {
+            flex-grow: 1; /* Ensure the text spans the remaining space */
+            text-align: left; /* Align text to the left within the box */
         }
     </style>
 </head>
 <body>
     <h1><b>Welcome to b0bot!</b></h1>
-    <h3> This is a CyberSecurity News API tailored for automated bots on social media platforms.</h3>
+    <h3>Your CyberSecurity News API for Automated Bots</h3>
+    
+    <h2>3 Available LLMs to Choose From:</h2>
     <ul>
-        <li><u>3 available LLMs to choose from:</u></li>
-        <li>1.Meta-Llama-3-8B-Instruct</li>
-        <li>2.Gemma-2b</li>
-        <li>3.Mistral-7B-Instruct-v0.2</li>
+        <li><a class="icon-link" href="/llama">⚙️</a><span>Meta-Llama-3-8B-Instruct</span></li><br>
+        <li><a class="icon-link" href="/gemma">⚙️</a><span>Gemma-2b</span></li><br>
+        <li><a class="icon-link" href="/mistralai">⚙️</a><span>Mistral-7B-Instruct-v0.2</span></li>
     </ul>
+    
+    <h2>3 Available URL Paths:</h2>
     <ul>
-        <li><u>3 available URL paths:</u></li>
-        <li><a href="/llama"><code>/llama</code></a></li>
-        <li><a href="/gemma"><code>/gemma</code></a></li>
-        <li><a href="/mistralai"><code>/mistralai</code></a></li>
+        <li><a class="icon-link" href="/llama">🔗</a><span><code>/llama</code></span></li><br>
+        <li><a class="icon-link" href="/gemma">🔗</a><span><code>/gemma</code></span></li><br>
+        <li><a class="icon-link" href="/mistralai">🔗</a><span><code>/mistralai</code></span></li>
     </ul>
 </body>
 </html>

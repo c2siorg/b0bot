@@ -15,9 +15,9 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 
 ## App Screenshots
 
-| Home Page | LLM Page | News Page |
-| :--------:| :-------:| :---------:|
-| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) |
+| Home Page | LLM Page | News Page | News Keywords Page |
+| :--------:| :-------:| :---------:| :-----------------:|
+| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) | ![News Keywords Page](assets/news_keywords.png) |
 
 ## Setup
 1. Install all necessary packages
@@ -100,9 +100,10 @@ Our API lives inside a Flask API and is powered by LangChain and a Huggingface e
 
 In addition, to keep the knowledge base of news up to date, a scheduled script will be executed on a regular interval to retrieve the most recent cybersecurity news by scraping a list of target news websites and store them into the MongoDB Atlas Database. Everytime a user requests the API, news in the database will be read into LangChain's memory and fed to the LLM. Then, answers will be generated based on both the selected LLM and our knowledge base.
 
-<img width="908" alt="image" src="https://github.com/CoToYo/b0bot/assets/56789038/218fdf2b-be27-4222-9119-81c3dc5c4e02">
+![Architecture](assets/arch.png)
 
-<img width="984" alt="image" src="https://github.com/CoToYo/b0bot/assets/56789038/4e5fe460-a210-46e9-b490-caa02e34c3af">
+![Knowledge Base](assets/db_arch.png)
+
 
 The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
 
