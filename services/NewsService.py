@@ -1,12 +1,15 @@
 import os
+from flask import g
 import json
+import requests
 from dotenv import dotenv_values
-from flask import jsonify
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import HuggingFaceEndpoint
-
 from models.NewsModel import CybernewsDB
+
+# --- MODERN IMPORTS (2025) ---
+from langchain_huggingface import HuggingFaceEndpoint
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+# -----------------------------
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
@@ -34,50 +37,33 @@ class NewsService:
     """
 
     def getNews(self, user_keywords=None):
-    # Fetch news data from db:
-    # Only fetch data with valid `author` and `newsDate`
-    # Drop field "id" from collection
+        # 1. Fetch Data from Pinecone
         news_data = self.db.get_news_collections()
-        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
-        template = """Question: {question}
-        Answer: Let's think step by step."""
+        if not news_data:
+            return "No news found in the database."
 
-        prompt = PromptTemplate.from_template(template)
-
-        # Determine which messages template to load
-        if user_keywords:
-            messages_template_path = 'prompts/withkey.json'
-        else:
-            messages_template_path = 'prompts/withoutkey.json'
-       
-        # Load the messages template from the JSON file
-        messages = self.load_json_file(messages_template_path)
-
-        # Replace placeholders in the messages
-        for message in messages:
-            if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
-                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
-            if user_keywords and message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
-                message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
-            if message['role'] == 'user' and '{news_format}' in message['content']:
-                message['content'] = message['content'].replace('{news_format}', self.news_format)
-            if message['role'] == 'user' and '{news_number}' in message['content']:
-                message['content'] = message['content'].replace('{news_number}', str(self.news_number))
-
-        # Create the LLMChain with the prompt and llm
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output = llm_chain.invoke(messages)
-
-        # Convert news data into JSON format
-        news_JSON = self.toJSON(output['text'])
-  
-        return news_JSON
-
- 
-    """
-    deal requests with wrong route
-    """
+        # 2. Format the news for the AI
+        # 2. Format the news for the AI (Updated for Dictionary Access)
+        formatted_news = "\n".join([
+            f"- {item.get('metadata', {}).get('title', 'No Title')}: {item.get('metadata', {}).get('summary', 'No summary')}"
+            for item in news_data
+        ])
+        
+        # 3. Create the Modern Chain (Prompt | Model | Parser)
+        prompt_template = PromptTemplate(
+            input_variables=["news_content"],
+            template="You are a tech news reporter. Summarize these stories into a concise briefing:\n\n{news_content}"
+        )
+        
+        # The "|" symbol is the new way to connect components
+        chain = prompt_template | self.llm | StrOutputParser()
+        
+        # 4. Run it
+        try:
+            return chain.invoke({"news_content": formatted_news})
+        except Exception as e:
+            return f"Error generating summary: {str(e)}"
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
