@@ -3,21 +3,21 @@ function renderContent(baseLLM) {
     const content = {
         gemma: {
             title: "Welcome to b0bot!",
-            subtitle: "You are now using Gemma-2b as your base LLM",
+            subtitle: "You are now using Gemma 2 9B as your base LLM",
             newsPath: "/gemma/news",
-            newsKeywordsPath: "/gemma/news_keywords?keywords="
+            newsKeywordsPath: "/gemma/news_keywords"
         },
         llama: {
             title: "Welcome to b0bot!",
-            subtitle: "You are now using Llama-3 as your base LLM",
+            subtitle: "You are now using Llama 3 8B as your base LLM",
             newsPath: "/llama/news",
-            newsKeywordsPath: "/llama/news_keywords?keywords="
+            newsKeywordsPath: "/llama/news_keywords"
         },
         mistralai: {
             title: "Welcome to b0bot!",
-            subtitle: "You are now using MistralAI as your base LLM",
+            subtitle: "You are now using Qwen 2.5 72B as your base LLM",
             newsPath: "/mistralai/news",
-            newsKeywordsPath: "/mistralai/news_keywords?keywords="
+            newsKeywordsPath: "/mistralai/news_keywords"
         }
     };
 

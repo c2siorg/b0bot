@@ -1,6 +1,6 @@
 {
-    "mistralai": "mistralai/Mistral-7B-Instruct-v0.2",
-    "gemma": "google/gemma-2b",
+    "mistralai": "Qwen/Qwen2.5-72B-Instruct",
+    "gemma": "google/gemma-2-9b-it",
     "llama" : "meta-llama/Meta-Llama-3-8B-Instruct"
 
 }
