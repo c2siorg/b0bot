@@ -8,11 +8,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from cybernews.CyberNews import CyberNews
 
 
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+# Load environment variables
+env_vars = dotenv_values(".env")
+PINECONE_API = env_vars.get("PINECONE_API_KEY")
+index_name = env_vars.get("PINECONE_INDEX_NAME", "cybernews-index")
 
 # configure client
 pc = Pinecone(api_key=PINECONE_API)
-index_name = "cybernews-index"
 
 # Delete the index if it already exists, so as to save storage
 if index_name in pc.list_indexes().names():
