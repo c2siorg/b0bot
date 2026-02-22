@@ -37,12 +37,18 @@ return news based on certain keywords
 """
 @routes.route("/<llm_name>/news_keywords", methods=["GET"])
 def getNewsWithKeywords_route(llm_name):
-    # get list of keywords as argument from User's request
     g.news_controller = NewsController(llm_name)
-    user_keywords = request.args.getlist("keywords")
-    data = g.news_controller.getNewsWithKeywords(user_keywords[0])
-    return render_template("news_key.html", data=data,keyword=user_keywords[0])
 
+    user_keywords = request.args.get("keywords")
+
+    if not user_keywords or not user_keywords.strip():
+        flash("Please enter a keyword before searching.")
+        return redirect(url_for("routes.set_llm_route", llm_name=llm_name))
+
+    cleaned_keyword = user_keywords.strip()
+    data = g.news_controller.getNewsWithKeywords(cleaned_keyword)
+
+    return render_template("news_key.html", data=data, keyword=cleaned_keyword)
 
 """
 deal requests with wrong route
