@@ -1,15 +1,12 @@
 import os
 import json
-from dotenv import dotenv_values
 from flask import jsonify
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
-env_vars = dotenv_values(".env")
-HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+
 class NewsService:
     def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
@@ -24,8 +21,10 @@ class NewsService:
             raise ValueError(f"Model '{model_name}' not found in llm_config.json")
         
         self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
+    repo_id=repo_id,
+    temperature=0.5,
+    huggingfacehub_api_token=os.getenv("HUGGINGFACE_TOKEN"),
+)
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 

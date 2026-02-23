@@ -1,5 +1,14 @@
 import os
 from dotenv import dotenv_values
+from dotenv import load_dotenv
+from config.env_validator import validate_env
+
+# 1️⃣ Load .env into os.environ
+load_dotenv()
+
+# 2️⃣ Fail fast BEFORE importing env-dependent modules
+validate_env()
+
 from flask import *
 from langchain.prompts import PromptTemplate
 from routes.NewsRoutes import routes
