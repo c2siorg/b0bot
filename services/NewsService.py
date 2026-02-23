@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from dotenv import dotenv_values
 from flask import jsonify
 from langchain.chains import LLMChain
@@ -7,25 +8,51 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
+from services.CacheService import CacheService
+
+logger = logging.getLogger(__name__)
+
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+
+# Only set environment variable if token exists
+if HUGGINGFACEHUB_API_TOKEN:
+    os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+else:
+    logger.warning("⚠ HUGGINGFACE_TOKEN not found in .env file")
+
 class NewsService:
     def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
+        self.cache = CacheService()
+        self.model_name = model_name
+        self.llm = None
+        self.available = False
 
         # Load the LLM configuration
-        with open('config/llm_config.json') as f:
-            llm_config = json.load(f)
+        try:
+            with open('config/llm_config.json') as f:
+                llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm 
+            repo_id = llm_config.get(model_name)
+            
+            if not repo_id:
+                logger.error(f"Model '{model_name}' not found in llm_config.json")
+                return
+            
+            if not HUGGINGFACEHUB_API_TOKEN:
+                logger.error("HUGGINGFACE_TOKEN not configured")
+                return
+            
+            self.llm = HuggingFaceEndpoint(
+                    repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
+                )
+            self.available = True
+            logger.info(f"✓ LLM service initialized: {model_name}")
+        except Exception as e:
+            logger.error(f"⚠ Failed to initialize LLM service: {e}")
+            self.available = False
         
-        if not repo_id:
-            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
-        
-        self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
@@ -34,11 +61,34 @@ class NewsService:
     """
 
     def getNews(self, user_keywords=None):
-    # Fetch news data from db:
-    # Only fetch data with valid `author` and `newsDate`
-    # Drop field "id" from collection
+        """
+        Return news with response caching.
+        Caches final LLM output to avoid expensive inference on repeated requests.
+        Returns demo/error data if service unavailable.
+        """
+        # Check if service is available
+        if not self.available or self.llm is None:
+            logger.warning(f"⚠ LLM service unavailable. Returning demo response.")
+            return self.get_demo_response(user_keywords)
+        
+        # Generate cache key based on model and keywords
+        cache_key = f"news:response:{self.model_name}:keywords={user_keywords or 'all'}"
+        
+        # Try to get from response cache first
+        cached_response = self.cache.get(cache_key)
+        if cached_response is not None:
+            logger.info(f"✓ Response retrieved from cache (model: {self.model_name})")
+            return cached_response
+        
+        # Fetch news data from db (uses data-layer cache)
         news_data = self.db.get_news_collections()
-        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
+        
+        # If no news available, return demo
+        if not news_data:
+            logger.warning("⚠ No news data available. Returning demo response.")
+            return self.get_demo_response(user_keywords)
+        
+        news_data = news_data[:50]  # limit to 50 due to LLM context limit
 
         template = """Question: {question}
         Answer: Let's think step by step."""
@@ -52,7 +102,11 @@ class NewsService:
             messages_template_path = 'prompts/withoutkey.json'
        
         # Load the messages template from the JSON file
-        messages = self.load_json_file(messages_template_path)
+        try:
+            messages = self.load_json_file(messages_template_path)
+        except Exception as e:
+            logger.error(f"Could not load prompt template: {e}")
+            return self.get_demo_response(user_keywords)
 
         # Replace placeholders in the messages
         for message in messages:
@@ -66,13 +120,46 @@ class NewsService:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
         # Create the LLMChain with the prompt and llm
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output = llm_chain.invoke(messages)
+        try:
+            logger.info(f"Invoking LLM (model: {self.model_name})...")
+            llm_chain = LLMChain(prompt=prompt, llm=self.llm)
+            output = llm_chain.invoke(messages)
+        except Exception as e:
+            logger.error(f"LLM invocation failed: {e}")
+            return self.get_demo_response(user_keywords)
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
+        
+        # Cache the response
+        self.cache.set(cache_key, news_JSON)
   
         return news_JSON
+    
+    def get_demo_response(self, user_keywords=None):
+        """Return demo response when service is unavailable"""
+        demo_data = [
+            {
+                "title": "[DEMO] Cybersecurity Alert System",
+                "source": "B0Bot Demo",
+                "date": "22/11/2025",
+                "url": "https://b0bot.example.com"
+            },
+            {
+                "title": "[DEMO] Cloud Security Best Practices",
+                "source": "B0Bot Demo",
+                "date": "21/11/2025",
+                "url": "https://b0bot.example.com"
+            }
+        ]
+        if user_keywords:
+            demo_data.append({
+                "title": f"[DEMO] News related to {user_keywords}",
+                "source": "B0Bot Demo",
+                "date": "20/11/2025",
+                "url": "https://b0bot.example.com"
+            })
+        return demo_data
 
  
     """
