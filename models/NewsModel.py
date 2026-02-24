@@ -52,12 +52,15 @@ class CybernewsDB:
         for i in range(0, len(id_list), batch_size):
             batch_ids = id_list[i:i + batch_size]
             response = self.index.fetch(ids=batch_ids, namespace=self.namespace)
-            vectors = response.get('vectors', [])
+            # Updated for Pinecone v3+ (Object access instead of Dict access)
+            vectors = response.vectors
             key_list = vectors.keys()
             key_list = list(key_list)
 
             for i in key_list:
-                metadata_dict = vectors[i].get('metadata', {})  
+                # Updated for Pinecone v3+
+                metadata_dict = vectors[i].metadata
+                if metadata_dict is None: metadata_dict = {}  
                 final_list.append(metadata_dict)  
 
         return final_list

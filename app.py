@@ -1,6 +1,7 @@
 from dotenv import dotenv_values
 from flask import *
-from langchain.prompts import PromptTemplate
+# Updated for LangChain 0.3+
+from langchain_core.prompts import PromptTemplate
 from routes.NewsRoutes import routes
 
 # `__name__` indicates the unique name of the current module
