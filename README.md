@@ -43,11 +43,18 @@ https://huggingface.co/
 4. Add huggingface token in `.env` file
 
 ```
-# HuggingFace
-HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
+# Hugging Face API Token
+HUGGINGFACE_TOKEN=[your_hugging_face_token_here]
 
-# Pinecone
-PINECONE_API_KEY='[Your pinecone api here]'
+# Pinecone API Key
+PINECONE_API_KEY=[your_pinecone_api_key_here]
+
+# Redis Configuration
+REDIS_HOST=[Redis host url]
+REDIS_PORT=[Redis port]
+REDIS_DB=[Redis DB you want to use]
+REDIS_PASSWORD=[Redis password if you have any]
+
 ```
 
 
@@ -64,15 +71,22 @@ client = Pinecone(api_key={PINECONE_API}) # Replace the string with yours
 Run `./db_update/Update.py` as a worker on a cloud service (e.g. heroku).
 Or, run `./db_update/Update.py` manually in local.
 
+7. Run redis-server
 
-7. Run the flask app
+run `redis-server`
+if you want to monitor redis run in another terminal   `redis-cli monitor`
+
+To run the test on redis use this command `python -m unittest tests/unitTest_redis.py `
+
+
+8. Run the flask app
 
 `flask --app app.py run`
 
 > By default, the home page will open. The routes have to be defined manually.
 
 
-8. We have added support for the following routes:
+9. We have added support for the following routes:
 ```
 /llama          # Loads the Meta-Llama-3-8B-Instruct
 /gemma          # Loads the Gemma-2b
@@ -84,7 +98,7 @@ Or, run `./db_update/Update.py` manually in local.
 > You can do so by visiting this [link](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct).
 
 
-8. Two available url paths
+10. Two available url paths
 ```
 /<llm-name>/news
 /<llm-name>/news_keywords?keywords=[Place news keywords here]

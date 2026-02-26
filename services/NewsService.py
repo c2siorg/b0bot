@@ -38,7 +38,7 @@ class NewsService:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
         news_data = self.db.get_news_collections()
-        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
+        news_data = news_data[:10] # limit the number of news to 50 , as LLMs have a context limit
 
         template = """Question: {question}
         Answer: Let's think step by step."""
