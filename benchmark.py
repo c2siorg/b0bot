@@ -3,14 +3,27 @@ from statistics import mean
 from cybernews.CyberNews import CyberNews
 
 
-def run_test(news_type, runs=6):
+def run_scaled_test(news_type, scale=1, runs=6):
     times = []
 
     for i in range(runs):
         news = CyberNews()
 
+        # Get original source list
+        original_sources = None
+        for category in news._news_types:
+            if news_type in category:
+                original_sources = category[news_type]
+                break
+
+        if original_sources is None:
+            raise ValueError("Invalid news type")
+
+        # Scale sources artificially
+        scaled_sources = original_sources * scale
+
         start = time.perf_counter()
-        data = news.get_news(news_type)
+        data = news._extractor.data_extractor(scaled_sources)
         end = time.perf_counter()
 
         duration = end - start
@@ -18,12 +31,15 @@ def run_test(news_type, runs=6):
 
         times.append(duration)
 
-    # Discard first run (cold start effect)
-    avg = mean(times[1:])
-    print(f"\nAverage (excluding first run): {avg:.4f} sec\n")
+    avg = mean(times[1:])  # discard first run
+    print(f"\nScale: {scale}x")
+    print(f"Average (excluding first run): {avg:.4f} sec\n")
 
     return avg
 
 
 if __name__ == "__main__":
-    run_test("general", runs=6)
+
+    # Test increasing concurrency pressure
+    for scale in [1, 5, 10, 20]:
+        run_scaled_test("general", scale=scale, runs=6)
