@@ -1,5 +1,5 @@
 {
-    "Qwen": "Qwen/Qwen3-8B",
+    "Qwen": "Qwen/Qwen3-4B-Instruct-2507",
     "gemma": "google/gemma-3-12b-it:featherless-ai", 
     "llama" : "meta-llama/Meta-Llama-3-8B-Instruct"
 

@@ -76,7 +76,7 @@ Or, run `./db_update/Update.py` manually in local.
 ```
 /llama          # Loads the Meta-Llama-3-8B-Instruct
 /gemma          # Loads the Gemma-3
-/qwen      # Loads the Qwen3-8B
+/qwen      # Loads the Qwen3-4B
 ``` 
 
 > [!NOTE]
