@@ -3,24 +3,22 @@ from statistics import mean
 from cybernews.CyberNews import CyberNews
 
 
+def get_sources(news, news_type):
+    for category in news._news_types:
+        if news_type in category:
+            return category[news_type]
+    raise ValueError("Invalid news type")
+
+
 def run_scaled_test(news_type, scale=1, runs=6):
     times = []
 
     for i in range(runs):
         news = CyberNews()
+        original_sources = get_sources(news, news_type)
 
-        # Get original source list
-        original_sources = None
-        for category in news._news_types:
-            if news_type in category:
-                original_sources = category[news_type]
-                break
-
-        if original_sources is None:
-            raise ValueError("Invalid news type")
-
-        # Scale sources artificially
-        scaled_sources = original_sources * scale
+        # Create independent copies so internal mutation doesn’t interfere
+        scaled_sources = [dict(item) for _ in range(scale) for item in original_sources]
 
         start = time.perf_counter()
         data = news._extractor.data_extractor(scaled_sources)
@@ -39,7 +37,5 @@ def run_scaled_test(news_type, scale=1, runs=6):
 
 
 if __name__ == "__main__":
-
-    # Test increasing concurrency pressure
     for scale in [1, 5, 10, 20]:
         run_scaled_test("general", scale=scale, runs=6)

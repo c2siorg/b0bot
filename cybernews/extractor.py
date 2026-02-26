@@ -5,6 +5,7 @@ Corrected version with safe selector alignment and URL normalization
 
 import concurrent.futures
 import httpx
+import time
 from bs4 import BeautifulSoup
 
 from .performance import Performance
@@ -48,6 +49,7 @@ class Extractor(Performance):
 
         try:
             response = self.session.get(url, headers=self._headers)
+            time.sleep(0.2) 
             response.raise_for_status()
         except (httpx.RequestError, httpx.TimeoutException, httpx.HTTPStatusError):
             return []
