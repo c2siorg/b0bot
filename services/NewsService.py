@@ -2,9 +2,7 @@ import os
 import json
 from dotenv import dotenv_values
 from flask import jsonify
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import HuggingFaceEndpoint
+from huggingface_hub import InferenceClient
 
 from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
@@ -23,11 +21,13 @@ class NewsService:
         if not repo_id:
             raise ValueError(f"Model '{model_name}' not found in llm_config.json")
         
-        self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
+        self.client = InferenceClient(
+            model=repo_id,
+            token=HUGGINGFACEHUB_API_TOKEN,
+        )
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
+        self.max_payload_chars = 12000  # stay within model context limits
 
     """
     Return news while checking if keyword has been specified or not
@@ -38,12 +38,13 @@ class NewsService:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
         news_data = self.db.get_news_collections()
-        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
+        news_data = news_data[:50]
 
-        template = """Question: {question}
-        Answer: Let's think step by step."""
-
-        prompt = PromptTemplate.from_template(template)
+        # Strip each item to only prompt-relevant fields and enforce a size limit
+        compact = self._compact_for_prompt(news_data)
+        while compact and len(json.dumps(compact, ensure_ascii=False)) > self.max_payload_chars:
+            compact.pop()
+        news_data_str = json.dumps(compact, ensure_ascii=False)
 
         # Determine which messages template to load
         if user_keywords:
@@ -57,7 +58,7 @@ class NewsService:
         # Replace placeholders in the messages
         for message in messages:
             if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
-                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
+                message['content'] = message['content'].replace('<news_data_placeholder>', news_data_str)
             if user_keywords and message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
                 message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
             if message['role'] == 'user' and '{news_format}' in message['content']:
@@ -65,12 +66,17 @@ class NewsService:
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
-        # Create the LLMChain with the prompt and llm
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output = llm_chain.invoke(messages)
+        # Use chat_completion via InferenceClient
+        response = self.client.chat_completion(
+            messages=messages,
+            max_tokens=1024,
+            temperature=0.5,
+        )
+
+        output = response.choices[0].message.content
 
         # Convert news data into JSON format
-        news_JSON = self.toJSON(output['text'])
+        news_JSON = self.toJSON(output)
   
         return news_JSON
 
@@ -132,3 +138,20 @@ class NewsService:
 
         news_list_json.pop()
         return news_list_json
+
+    def _compact_for_prompt(self, news_data):
+        """Strip raw DB documents to only the fields the prompt needs."""
+        compact = []
+        for item in news_data:
+            if not isinstance(item, dict):
+                continue
+            title = str(item.get("headlines") or item.get("title") or "").strip()
+            if not title:
+                continue
+            compact.append({
+                "title": title,
+                "source": str(item.get("author") or item.get("source") or "Unknown").strip(),
+                "date": str(item.get("newsDate") or item.get("date") or "Unknown").strip(),
+                "url": str(item.get("newsURL") or item.get("url") or "N/A").strip(),
+            })
+        return compact

@@ -3,7 +3,7 @@ function renderContent(baseLLM) {
     const content = {
         gemma: {
             title: "Welcome to b0bot!",
-            subtitle: "You are now using Gemma-2b as your base LLM",
+            subtitle: "You are now using Gemma-3 as your base LLM",
             newsPath: "/gemma/news",
             newsKeywordsPath: "/gemma/news_keywords?keywords="
         },
@@ -13,11 +13,11 @@ function renderContent(baseLLM) {
             newsPath: "/llama/news",
             newsKeywordsPath: "/llama/news_keywords?keywords="
         },
-        mistralai: {
+        Qwen: {
             title: "Welcome to b0bot!",
-            subtitle: "You are now using MistralAI as your base LLM",
-            newsPath: "/mistralai/news",
-            newsKeywordsPath: "/mistralai/news_keywords?keywords="
+            subtitle: "You are now using Qwen as your base LLM",
+            newsPath: "/Qwen/news",
+            newsKeywordsPath: "/Qwen/news_keywords?keywords="
         }
     };
 

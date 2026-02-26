@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +18,7 @@
             color: #ffffff;
             text-align: center;
         }
+
         h1 {
             font-size: 3em;
             text-transform: uppercase;
@@ -24,12 +26,14 @@
             margin-top: 20px;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
         }
+
         h3 {
             font-size: 1.5em;
             font-weight: 300;
             margin-bottom: 30px;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
         }
+
         h2 {
             font-size: 1.8em;
             margin-top: 20px;
@@ -40,12 +44,14 @@
             letter-spacing: 1px;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
+
         ul {
             list-style-type: none;
             padding: 0;
             text-align: center;
             width: 100%;
         }
+
         li {
             margin: 10px 0;
             font-size: 1.1em;
@@ -56,12 +62,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 300px; /* Set a fixed width for uniform boxes */
-            margin: 10px auto; /* Center the list items */
+            width: 300px;
+            /* Set a fixed width for uniform boxes */
+            margin: 10px auto;
+            /* Center the list items */
         }
+
         li {
             padding: 0;
         }
+
         li a {
             display: flex;
             align-items: center;
@@ -73,36 +83,41 @@
             transition: background 0.3s ease, transform 0.3s ease;
             border-radius: 5px;
         }
+
         li a:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-5px);
         }
+
         .icon {
             font-size: 1.5em;
             margin-right: 10px;
         }
+
         span {
             flex-grow: 1;
             text-align: left;
         }
     </style>
 </head>
+
 <body>
     <h1><b>Welcome to b0bot!</b></h1>
     <h3>Your CyberSecurity News API for Automated Bots</h3>
-    
+
     <h2>3 Available LLMs to Choose From:</h2>
     <ul>
         <li><a href="/llama"><span class="icon">⚙️</span><span>Meta-Llama-3-8B-Instruct</span></a></li><br>
-        <li><a href="/gemma"><span class="icon">⚙️</span><span>Gemma-2b</span></a></li><br>
-        <li><a href="/mistralai"><span class="icon">⚙️</span><span>Mistral-7B-Instruct-v0.2</span></a></li>
+        <li><a href="/gemma"><span class="icon">⚙️</span><span>Gemma-3</span></a></li><br>
+        <li><a href="/Qwen"><span class="icon">⚙️</span><span>Qwen3-8B</span></a></li>
     </ul>
-    
+
     <h2>3 Available URL Paths:</h2>
     <ul>
         <li><a href="/llama"><span class="icon">🔗</span><span><code>/llama</code></span></a></li><br>
         <li><a href="/gemma"><span class="icon">🔗</span><span><code>/gemma</code></span></a></li><br>
-        <li><a href="/mistralai"><span class="icon">🔗</span><span><code>/mistralai</code></span></a></li>
+        <li><a href="/Qwen"><span class="icon">🔗</span><span><code>/Qwen</code></span></a></li>
     </ul>
 </body>
+
 </html>
