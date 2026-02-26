@@ -1,7 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
 routes = Blueprint("routes", __name__)
-news_controller = NewsController("mistralai") # default model name
+news_controller = NewsController("qwen") # default model name
 
 """
 home page route

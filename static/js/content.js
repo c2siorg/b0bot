@@ -13,11 +13,11 @@ function renderContent(baseLLM) {
             newsPath: "/llama/news",
             newsKeywordsPath: "/llama/news_keywords"
         },
-        mistralai: {
+        qwen: {
             title: "Welcome to b0bot!",
             subtitle: "You are now using Qwen 2.5 72B as your base LLM",
-            newsPath: "/mistralai/news",
-            newsKeywordsPath: "/mistralai/news_keywords"
+            newsPath: "/qwen/news",
+            newsKeywordsPath: "/qwen/news_keywords"
         }
     };
 
