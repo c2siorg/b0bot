@@ -20,6 +20,11 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 | ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) | ![News Keywords Page](assets/news_keywords.png) |
 
 ## Setup
+Before installing packages, create and activate a Python virtual environment:
+
+`python3 -m venv venv`
+`source venv/bin/activate`
+
 1. Install all necessary packages
 
 `pip install -r ./requirements.txt`
