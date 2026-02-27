@@ -23,6 +23,7 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 Before installing packages, create and activate a Python virtual environment:
 
 `python3 -m venv venv`
+
 `source venv/bin/activate`
 
 1. Install all necessary packages
