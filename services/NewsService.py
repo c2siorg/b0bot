@@ -2,16 +2,39 @@ import os
 import json
 from dotenv import dotenv_values
 from flask import jsonify
+from typing import List
 
+from pydantic import BaseModel, HttpUrl
 from langchain_openai import ChatOpenAI
-from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
+from langchain.output_parsers import PydanticOutputParser
 
 from models.NewsModel import CybernewsDB
 
+
+# Load environment variables
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 
+
+# -----------------------------
+# Structured Schema Definitions
+# -----------------------------
+
+class NewsItem(BaseModel):
+    title: str
+    source: str
+    date: str
+    url: HttpUrl
+
+
+class NewsResponse(BaseModel):
+    items: List[NewsItem]
+
+
+# -----------------------------
+# News Service
+# -----------------------------
 
 class NewsService:
     def __init__(self, model_name) -> None:
@@ -28,109 +51,83 @@ class NewsService:
 
         self.repo_id = repo_id
 
-        # LangChain Chat Model via HF Router
+        # HF Router-backed Chat Model
         self.llm = ChatOpenAI(
             model=self.repo_id,
-            temperature=0.5,
+            temperature=0,  # MUST be 0 for structured output stability
             api_key=HUGGINGFACEHUB_API_TOKEN,
             base_url="https://router.huggingface.co/v1",
         )
 
-        self.news_format = "[title | source | date(DD/MM/YYYY) | news url];"
-        self.news_number = 10
+        # Structured output parser
+        self.parser = PydanticOutputParser(pydantic_object=NewsResponse)
+
+    # -----------------------------
+    # Get News
+    # -----------------------------
 
     def getNews(self, user_keywords=None):
         news_data = self.db.get_news_collections()
+
+        print("DB COUNT:", len(news_data))
+
+        # Limit input size
         news_data = news_data[:10]
 
-        # Determine prompt template
-        if user_keywords:
-            messages_template_path = "prompts/withkey.json"
-        else:
-            messages_template_path = "prompts/withoutkey.json"
+        # Reduce to essential fields only
+        trimmed_news = [
+            {
+                "title": item.get("headlines"),
+                "source": item.get("author"),
+                "date": item.get("newsDate"),
+                "url": item.get("newsURL"),
+            }
+            for item in news_data
+        ]
 
-        messages = self.load_json_file(messages_template_path)
+        serialized_news = json.dumps(trimmed_news, indent=2)
 
-        # Replace placeholders
-        for message in messages:
-            if message["role"] == "user" and "<news_data_placeholder>" in message["content"]:
-                message["content"] = message["content"].replace(
-                    "<news_data_placeholder>", str(news_data)
-                )
+        prompt = PromptTemplate(
+            template="""
+You are a cybersecurity news formatter.
 
-            if user_keywords and message["role"] == "user" and "<user_keywords_placeholder>" in message["content"]:
-                message["content"] = message["content"].replace(
-                    "<user_keywords_placeholder>", str(user_keywords)
-                )
+Extract strictly from the provided JSON.
+Return ONLY valid JSON.
+Do NOT invent values.
+Do NOT return null.
+Do NOT add explanation.
 
-            if message["role"] == "user" and "{news_format}" in message["content"]:
-                message["content"] = message["content"].replace(
-                    "{news_format}", self.news_format
-                )
+{format_instructions}
 
-            if message["role"] == "user" and "{news_number}" in message["content"]:
-                message["content"] = message["content"].replace(
-                    "{news_number}", str(self.news_number)
-                )
+User Keywords:
+{user_keywords}
 
-        # LangChain expects a string prompt for LLMChain
-        prompt_text = "\n".join([m["content"] for m in messages if m["role"] != "system"])
-
-        prompt = PromptTemplate.from_template("{input}")
-
-        llm_chain = LLMChain(
-            llm=self.llm,
-            prompt=prompt
+News Data:
+{news_data}
+""",
+            input_variables=["news_data", "user_keywords"],
+            partial_variables={
+                "format_instructions": self.parser.get_format_instructions()
+            },
         )
 
-        response = llm_chain.invoke({"input": prompt_text})
+        chain = prompt | self.llm | self.parser
 
-        output_text = response["text"]
+        try:
+            result = chain.invoke({
+                "news_data": serialized_news,
+                "user_keywords": user_keywords if user_keywords else "None"
+            })
 
-        news_JSON = self.toJSON(output_text)
+            return result.dict()["items"]
 
-        return news_JSON
+        except Exception as e:
+            print("STRUCTURED OUTPUT FAILED:", e)
+            return []
+
+    # -----------------------------
+    # 404 Handler
+    # -----------------------------
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
-
-    def load_json_file(self, file_path):
-        with open(file_path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-        return data
-
-    def toJSON(self, data: str):
-        if not data:
-            return []
-
-        news_list = data.split("\n")
-        news_list_json = []
-
-        for item in news_list:
-            item = item.strip()
-
-            if not item:
-                continue
-
-            if not item.startswith("[") or "|" not in item:
-                continue
-
-            item = item.strip("[]").strip(";")
-
-            parts = [p.strip() for p in item.split("|")]
-
-            if len(parts) != 4:
-                continue
-
-            title, source, date, url = parts
-
-            news_item = {
-                "title": title,
-                "source": source,
-                "date": date,
-                "url": url,
-            }
-
-            news_list_json.append(news_item)
-
-        return news_list_json

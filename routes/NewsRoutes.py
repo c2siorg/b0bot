@@ -28,8 +28,8 @@ return news without considering keywords
 @routes.route("/<llm_name>/news", methods=["GET"])
 def getNews_route(llm_name):
     g.news_controller = NewsController(llm_name)
-    print("ROUTE RECEIVED DATA:", news)
     news = g.news_controller.getNews()
+    print("ROUTE RECEIVED DATA:", news) 
     return render_template("news.html", data=news)
 
 
