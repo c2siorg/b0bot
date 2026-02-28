@@ -49,7 +49,6 @@ class Extractor(Performance):
 
         try:
             response = self.session.get(url, headers=self._headers)
-            time.sleep(0.2) 
             response.raise_for_status()
         except (httpx.RequestError, httpx.TimeoutException, httpx.HTTPStatusError):
             return []
