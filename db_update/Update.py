@@ -1,102 +1,150 @@
 import sys
 import os
+import uuid
+import time
+from datetime import datetime
 from dotenv import dotenv_values
-from pinecone import Pinecone , ServerlessSpec
+import feedparser
+
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from cybernews.CyberNews import CyberNews
 
 
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+# ---------------------------
+# RSS Cybersecurity Feeds
+# ---------------------------
 
-# configure client
-pc = Pinecone(api_key=PINECONE_API)
-index_name = "cybernews-index"
-
-# Delete the index if it already exists, so as to save storage
-if index_name in pc.list_indexes().names():
-    pc.delete_index(index_name)
-    print(f"Deleted existing index: {index_name}")
-
-# Create or access the index
-if index_name not in pc.list_indexes():
-    pc.create_index(
-        name=index_name, 
-        dimension=384, 
-        metric='cosine',
-        spec=ServerlessSpec(
-            cloud='aws',
-            region='us-east-1'
-        )
-    )
-
-# Connect to the index
-index = pc.Index(index_name)
-
-namespace = "c2si"
-
-model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# Different types of news
-news = CyberNews()
-
-newsBox = dict()
-
-newsBox["general_news"] = news.get_news("general")
-
-newsBox["cyber_attack_news"] = news.get_news("cyberAttack")
-
-newsBox["vulnerability_news"] = news.get_news("vulnerability")
-
-newsBox["malware_news"] = news.get_news("malware")
-
-newsBox["security_news"] = news.get_news("security")
-
-newsBox["data_breach_news"] = news.get_news("dataBreach")   
-
-
-"""
-News Format:
-
-news = {
-    "id: ""
-    "headlines": "",
-    "author": "",
-    "fullNews": "",
-    "newsURL": "",
-    "newsImgURL":
-    "newsDate": "",
+FEEDS = {
+    "general_news": "https://feeds.feedburner.com/TheHackersNews",
+    "cyber_attack_news": "https://www.bleepingcomputer.com/feed/",
+    "security_news": "https://www.darkreading.com/rss.xml",
+    "vulnerability_news": "https://krebsonsecurity.com/feed/"
 }
 
-Notice: "id" should be removed before the news is inserted into the database. newsImgURL also not important right now.
-"""
 
-# Convert news articles to vectors and upsert into Pinecone
-for news_type, articles in newsBox.items():
-    for article in articles:
-        # Combine headline and full news for embedding
-        text = article["headlines"] + " " + article["fullNews"]
-        
-        # Convert text to vector
-        vector = model.encode(text).tolist()  # Ensure the vector is a list
-        
-        # Prepare the document ID (use unique identifiers from your data)
-        document_id = article["id"]
-        document_id = str(document_id)
-        
-        # Prepare metadata
-        metadata = {
-            "headlines": article["headlines"],
-            "author": article["author"],
-            "fullNews": article["fullNews"],
-            "newsURL": article["newsURL"],
-            "newsImgURL": article["newsImgURL"],
-            "newsDate": article["newsDate"]
-        }
-        
-        # Upsert the vector with metadata into Pinecone
-        index.upsert([(document_id, vector, metadata)] , namespace=namespace)
-        
-        print(f"Inserted article ID: {document_id} with metadata into index: {index_name}")
+# ---------------------------
+# Feed Parsing
+# ---------------------------
 
+def parse_feed(url):
+    feed = feedparser.parse(url)
+    articles = []
+
+    for entry in feed.entries:
+        articles.append({
+            "id": str(uuid.uuid4()),
+            "headlines": entry.title,
+            "author": entry.get("author", "Unknown"),
+            "fullNews": entry.get("summary", ""),
+            "newsURL": entry.link,
+            "newsImgURL": "",
+            "newsDate": entry.get("published", str(datetime.now()))
+        })
+
+    return articles
+
+
+def get_all_news():
+    newsBox = {}
+    for category, url in FEEDS.items():
+        newsBox[category] = parse_feed(url)
+    return newsBox
+
+
+# ---------------------------
+# Main Execution Logic
+# ---------------------------
+
+def main():
+
+    # ---------------------------
+    # Pinecone Configuration
+    # ---------------------------
+
+    PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+
+    pc = Pinecone(api_key=PINECONE_API)
+    index_name = "cybernews-index"
+    namespace = "c2si"
+
+    # Delete index if exists (optional behavior retained)
+    if index_name in pc.list_indexes().names():
+        pc.delete_index(index_name)
+        print(f"Deleted existing index: {index_name}")
+
+    # Create index if not exists
+    if index_name not in pc.list_indexes().names():
+        pc.create_index(
+            name=index_name,
+            dimension=384,
+            metric="cosine",
+            spec=ServerlessSpec(
+                cloud="aws",
+                region="us-east-1"
+            )
+        )
+
+        while True:
+            description = pc.describe_index(index_name)
+            if description.status['ready']:
+                break
+            time.sleep(2)
+
+        print("Index is ready.")
+
+    index = pc.Index(index_name)
+
+    # ---------------------------
+    # Embedding Model
+    # ---------------------------
+
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    # ---------------------------
+    # Fetch News
+    # ---------------------------
+
+    newsBox = get_all_news()
+
+    # ---------------------------
+    # Embed & Store
+    # ---------------------------
+
+    for news_type, articles in newsBox.items():
+        print(f"\nProcessing category: {news_type}")
+
+        for article in articles:
+            text = article["headlines"] + " " + article["fullNews"]
+
+            vector = model.encode(text).tolist()
+            document_id = article["id"]
+
+            metadata = {
+                "category": news_type,
+                "headlines": article["headlines"],
+                "author": article["author"],
+                "fullNews": article["fullNews"],
+                "newsURL": article["newsURL"],
+                "newsImgURL": article["newsImgURL"],
+                "newsDate": article["newsDate"]
+            }
+
+            index.upsert(
+                [(document_id, vector, metadata)],
+                namespace=namespace
+            )
+
+            print(f"Inserted article ID: {document_id}")
+
+    print("\nAll news articles processed successfully.")
+
+    stats = index.describe_index_stats()
+    print("Vector count:", stats['total_vector_count'])
+
+
+# ---------------------------
+# Prevent Auto Execution on Import
+# ---------------------------
+
+if __name__ == "__main__":
+    main()

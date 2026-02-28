@@ -1,36 +1,30 @@
-import time
-import concurrent.futures
-from statistics import mean
 from cybernews.CyberNews import CyberNews
+from cybernews.extractor import Extractor
+import time
 
 
-def single_run(news_type):
-    news = CyberNews()
-    return news.get_news(news_type)
+def run_benchmark(runs=5):
+    extractor = Extractor()
+    cyber = CyberNews()
 
+    # pick a valid news type
+    news_type = cyber.get_news_types[0]
 
-def run_concurrent_test(news_type, users=1, runs=5):
-    times = []
+    timings = []
 
-    for r in range(runs):
+    for i in range(runs):
         start = time.perf_counter()
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=users) as executor:
-            futures = [executor.submit(single_run, news_type) for _ in range(users)]
-            results = [f.result() for f in futures]
-
+        cyber.get_news(news_type)
         end = time.perf_counter()
 
         duration = end - start
-        print(f"Run {r+1}: {duration:.4f} sec | Total Articles: {sum(len(r) for r in results)}")
+        timings.append(duration)
 
-        times.append(duration)
+        print(f"Run {i+1}: {duration:.4f} sec")
 
-    avg = mean(times[1:])
-    print(f"\nUsers: {users}")
-    print(f"Average (excluding first run): {avg:.4f} sec\n")
+    avg = sum(timings[1:]) / (runs - 1)
+    print(f"\nAverage (excluding first run): {avg:.4f} sec")
 
 
 if __name__ == "__main__":
-    for users in [1, 5, 10, 20, 40]:
-        run_concurrent_test("general", users=users)
+    run_benchmark()
