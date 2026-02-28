@@ -16,11 +16,6 @@ from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 
-
-# -----------------------------
-# Structured Schema Definitions
-# -----------------------------
-
 class NewsItem(BaseModel):
     title: str
     source: str
@@ -30,11 +25,6 @@ class NewsItem(BaseModel):
 
 class NewsResponse(BaseModel):
     items: List[NewsItem]
-
-
-# -----------------------------
-# News Service
-# -----------------------------
 
 class NewsService:
     def __init__(self, model_name) -> None:
@@ -54,17 +44,13 @@ class NewsService:
         # HF Router-backed Chat Model
         self.llm = ChatOpenAI(
             model=self.repo_id,
-            temperature=0,  # MUST be 0 for structured output stability
+            temperature=0,  
             api_key=HUGGINGFACEHUB_API_TOKEN,
             base_url="https://router.huggingface.co/v1",
         )
 
         # Structured output parser
         self.parser = PydanticOutputParser(pydantic_object=NewsResponse)
-
-    # -----------------------------
-    # Get News
-    # -----------------------------
 
     def getNews(self, user_keywords=None):
         news_data = self.db.get_news_collections()
@@ -111,23 +97,36 @@ News Data:
             },
         )
 
-        chain = prompt | self.llm | self.parser
+        chain = prompt | self.llm
 
         try:
-            result = chain.invoke({
+            raw_response = chain.invoke({
                 "news_data": serialized_news,
                 "user_keywords": user_keywords if user_keywords else "None"
-            })
+          })
 
-            return result.dict()["items"]
+            content = raw_response.content
+
+            # Clean markdown fences
+            content = content.replace("```json", "").replace("```", "").strip()
+
+            # Extract JSON object
+            start = content.find("{")
+            end = content.rfind("}")
+            if start != -1 and end != -1:
+                content = content[start:end+1]
+
+            parsed = json.loads(content)
+
+            # Validate using Pydantic manually
+            validated = NewsResponse(**parsed)
+
+            return validated.dict()["items"]
 
         except Exception as e:
             print("STRUCTURED OUTPUT FAILED:", e)
             return []
-
-    # -----------------------------
-    # 404 Handler
-    # -----------------------------
+        
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
