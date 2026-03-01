@@ -40,6 +40,11 @@ def getNewsWithKeywords_route(llm_name):
     # get list of keywords as argument from User's request
     g.news_controller = NewsController(llm_name)
     user_keywords = request.args.getlist("keywords")
+    
+    # Validate that keywords parameter is provided
+    if not user_keywords or len(user_keywords) == 0:
+        return jsonify({"error": "The 'keywords' parameter is required"}), 400
+    
     data = g.news_controller.getNewsWithKeywords(user_keywords[0])
     return render_template("news_key.html", data=data,keyword=user_keywords[0])
 
@@ -49,4 +54,8 @@ deal requests with wrong route
 """
 @routes.errorhandler(404)
 def notFound_route(error):
-    g.news_controller.notFound(error)
+    # Check if news_controller is initialized in g
+    if hasattr(g, 'news_controller') and g.news_controller:
+        return g.news_controller.notFound(error)
+    # Fallback to a basic 404 response if controller is not available
+    return jsonify({"error": "404 Not Found", "message": str(error)}), 404
