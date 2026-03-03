@@ -1,15 +1,9 @@
-"""
-Pydantic v2 schemas for every request / response that touches the News domain.
-"""
-
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
 
 class NewsItem(BaseModel):
-    """A single processed news article returned by the LLM."""
-
     title: str = Field(
         ...,
         description="Headline / title of the news article",
@@ -33,8 +27,6 @@ class NewsItem(BaseModel):
 
 
 class NewsResponse(BaseModel):
-    """Top-level envelope returned by every news endpoint."""
-
     llm: str = Field(
         ...,
         description="Name of the LLM model that processed the news",
@@ -55,8 +47,6 @@ class NewsResponse(BaseModel):
 
 
 class ErrorResponse(BaseModel):
-    """Standard error body (mirrors FastAPI's default ``HTTPException``)."""
-
     detail: str = Field(
         ...,
         description="Human-readable error message",
@@ -64,8 +54,6 @@ class ErrorResponse(BaseModel):
 
 
 class ModelsResponse(BaseModel):
-    """Lists the LLMs that the API currently supports."""
-
     available_models: list[str] = Field(
         ...,
         description="Model short-names accepted by the /{llm_name}/ routes",
