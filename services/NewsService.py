@@ -6,8 +6,6 @@ from typing import List
 
 from pydantic import BaseModel, HttpUrl
 from langchain_openai import ChatOpenAI
-from langchain.prompts import PromptTemplate
-from langchain.output_parsers import PydanticOutputParser
 
 from models.NewsModel import CybernewsDB
 
@@ -15,6 +13,7 @@ from models.NewsModel import CybernewsDB
 # Load environment variables
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
+
 
 class NewsItem(BaseModel):
     title: str
@@ -26,11 +25,11 @@ class NewsItem(BaseModel):
 class NewsResponse(BaseModel):
     items: List[NewsItem]
 
+
 class NewsService:
     def __init__(self, model_name) -> None:
         self.db = CybernewsDB()
 
-        # Load LLM configuration
         with open("config/llm_config.json") as f:
             llm_config = json.load(f)
 
@@ -41,26 +40,20 @@ class NewsService:
 
         self.repo_id = repo_id
 
-        # HF Router-backed Chat Model
         self.llm = ChatOpenAI(
             model=self.repo_id,
-            temperature=0,  
+            temperature=0,
             api_key=HUGGINGFACEHUB_API_TOKEN,
             base_url="https://router.huggingface.co/v1",
         )
-
-        # Structured output parser
-        self.parser = PydanticOutputParser(pydantic_object=NewsResponse)
 
     def getNews(self, user_keywords=None):
         news_data = self.db.get_news_collections()
 
         print("DB COUNT:", len(news_data))
 
-        # Limit input size
         news_data = news_data[:10]
 
-        # Reduce to essential fields only
         trimmed_news = [
             {
                 "title": item.get("headlines"),
@@ -73,60 +66,60 @@ class NewsService:
 
         serialized_news = json.dumps(trimmed_news, indent=2)
 
-        prompt = PromptTemplate(
-            template="""
+        prompt = f"""
 You are a cybersecurity news formatter.
 
-Extract strictly from the provided JSON.
-Return ONLY valid JSON.
-Do NOT invent values.
-Do NOT return null.
-Do NOT add explanation.
+Extract ALL items from the provided JSON.
+Return exactly one valid JSON object in this format:
 
-{format_instructions}
+{{
+  "items": [
+    {{
+      "title": "...",
+      "source": "...",
+      "date": "...",
+      "url": "..."
+    }}
+  ]
+}}
+
+Do not include explanations.
+Do not include markdown.
+Return only JSON.
 
 User Keywords:
-{user_keywords}
+{user_keywords if user_keywords else "None"}
 
 News Data:
-{news_data}
-""",
-            input_variables=["news_data", "user_keywords"],
-            partial_variables={
-                "format_instructions": self.parser.get_format_instructions()
-            },
-        )
-
-        chain = prompt | self.llm
+{serialized_news}
+"""
 
         try:
-            raw_response = chain.invoke({
-                "news_data": serialized_news,
-                "user_keywords": user_keywords if user_keywords else "None"
-          })
+            raw_response = self.llm.invoke(prompt)
+            content = raw_response.content.strip()
 
-            content = raw_response.content
-
-            # Clean markdown fences
+            # Remove markdown fences if present
             content = content.replace("```json", "").replace("```", "").strip()
 
-            # Extract JSON object
-            start = content.find("{")
-            end = content.rfind("}")
-            if start != -1 and end != -1:
-                content = content[start:end+1]
+            # Extract first valid JSON object only
+            decoder = json.JSONDecoder()
+            obj, _ = decoder.raw_decode(content)
 
-            parsed = json.loads(content)
+            # Case 1: wrapped in list
+            if isinstance(obj, list):
+                obj = obj[0]
 
-            # Validate using Pydantic manually
-            validated = NewsResponse(**parsed)
+            # Case 2: model returned single object
+            if "items" not in obj:
+                obj = {"items": [obj]}
 
-            return validated.dict()["items"]
+            validated = NewsResponse(**obj)
+
+            return validated.items
 
         except Exception as e:
             print("STRUCTURED OUTPUT FAILED:", e)
             return []
-        
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
