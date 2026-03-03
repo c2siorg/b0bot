@@ -20,64 +20,60 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 | ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) | ![News Keywords Page](assets/news_keywords.png) |
 
 ## Setup
+
 1. Install all necessary packages
 
-`pip install -r ./requirements.txt`
+pip install -r ./requirements.txt
 
 
 2. Set up your Pinecone database
-```
 https://www.pinecone.io/
-```
-Login to Pinecone and create a new index with the name `news-index`. Then, add the Pinecone API key in the `.env` file.
+
+Login to Pinecone and create a new index with the name news-index. Then, add the Pinecone API key in the .env file.
 
 
 
 
 3. Set up your HuggingFace account
-```
 https://huggingface.co/
-```
 
 
-4. Add huggingface token in `.env` file
 
-```
+4. Add huggingface token in .env file
+
 # HuggingFace
 HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
 
 # Pinecone
 PINECONE_API_KEY='[Your pinecone api here]'
-```
+
 
 
 5. Remember to replace the Pinecone connection string
 
-```
 # Example
 client = Pinecone(api_key={PINECONE_API}) # Replace the string with yours
-```
+
 
 
 6. Enrich/Update news data into your database
 
-Run `./db_update/Update.py` as a worker on a cloud service (e.g. heroku).
-Or, run `./db_update/Update.py` manually in local.
+Run ./db_update/Update.py as a worker on a cloud service (e.g. heroku).
+Or, run ./db_update/Update.py manually in local.
 
 
 7. Run the flask app
 
-`flask --app app.py run`
+flask --app app.py run
 
 > By default, the home page will open. The routes have to be defined manually.
 
 
 8. We have added support for the following routes:
-```
 /llama          # Loads the Meta-Llama-3-8B-Instruct
 /gemma          # Loads the Gemma-2b
 /mistralai      # Loads the Mistral-7B-Instruct-v0.2
-``` 
+ 
 
 > [!NOTE]
 > The Huggingface token you are using must have access to the LLama3 model listed above.
@@ -85,10 +81,9 @@ Or, run `./db_update/Update.py` manually in local.
 
 
 8. Two available url paths
-```
 /<llm-name>/news
 /<llm-name>/news_keywords?keywords=[Place news keywords here]
-```
+
 
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the avaialble paths above.
@@ -106,6 +101,19 @@ In addition, to keep the knowledge base of news up to date, a scheduled script w
 
 
 The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
+
+## Redis Cache Setup
+
+1. Install Redis
+   - For installation refer: https://redis.io/docs/getting-started/
+
+2. Configure Redis connection in your .env file:
+```
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_EXPIRATION=3600
+```
 
 ## Licensing
 

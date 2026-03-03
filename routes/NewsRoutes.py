@@ -31,7 +31,6 @@ def getNews_route(llm_name):
     news = g.news_controller.getNews()
     return render_template("news.html", data=news)
 
-
 """
 return news based on certain keywords
 """
