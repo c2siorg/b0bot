@@ -49,4 +49,4 @@ deal requests with wrong route
 """
 @routes.errorhandler(404)
 def notFound_route(error):
-    g.news_controller.notFound(error)
+    return jsonify({"error": "Route not found"}), 404
