@@ -20,25 +20,9 @@ class NewsRepository:
 
     def fetch_all_from_namespace(self, batch_size: int = 100) -> list[dict]:
         
-        zero_vector = [0.0] * self._vector_dim
-
         id_list: list[str] = []
-        cursor: str | None = None
-
-        while True:
-            response = self._index.query(
-                vector=zero_vector,
-                namespace=self._namespace,
-                top_k=batch_size,
-                include_metadata=False,
-                include_values=False,
-            )
-            ids = [match["id"] for match in response.get("matches", [])]
+        for ids in self._index.list(namespace=self._namespace):
             id_list.extend(ids)
-
-            cursor = response.get("next_cursor")
-            if not cursor:
-                break
 
         logger.info("Pinecone: collected %d vector IDs", len(id_list))
 

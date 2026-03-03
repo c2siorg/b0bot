@@ -3,10 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 from typing import Optional
 
-from langchain.chains import LLMChain
+# FIX: Removed deprecated LLMChain import
 from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
@@ -25,8 +24,6 @@ class NewsService:
         self._llm_cache: dict[str, HuggingFaceEndpoint] = {}
         self._llm_config: dict[str, str] = self._load_llm_config()
         self._news_format = "[title, source, date(DD/MM/YYYY), news url];"
-
-        os.environ["HUGGINGFACEHUB_API_TOKEN"] = settings.huggingface_token
 
     def _load_llm_config(self) -> dict[str, str]:
         """Load ``{ short_name: huggingface_repo_id }`` from the JSON file."""
@@ -97,10 +94,10 @@ class NewsService:
     ) -> str:
         template = "Question: {question}\nAnswer: Let's think step by step."
         prompt = PromptTemplate.from_template(template)
-        chain = LLMChain(prompt=prompt, llm=llm)
-        output = chain.invoke(messages)
-        return output.get("text", "")
-
+        
+        chain = prompt | llm
+        output = chain.invoke({"question": messages})
+        return output
     
     def _parse_llm_output(self, raw_output: str) -> list[NewsItem]:
         
@@ -143,7 +140,6 @@ class NewsService:
                 logger.warning("Skipping unparseable line %r – %s", line, exc)
 
         return news_items
-
    
     async def get_news(
         self,
