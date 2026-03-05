@@ -9,3 +9,5 @@ PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
 
 client = Pinecone(api_key=PINECONE_API)
 index_name = "cybernews-index"
+
+##print("Pinecone client initialized successfully, index_name:", index_name)

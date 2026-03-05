@@ -48,6 +48,12 @@ HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
 
 # Pinecone
 PINECONE_API_KEY='[Your pinecone api here]'
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+
 ```
 
 

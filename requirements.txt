@@ -13,3 +13,5 @@ requests==2.28.2
 pinecone-client
 langchain-pinecone
 sentence-transformers
+redis
+requests
