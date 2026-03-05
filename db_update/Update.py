@@ -13,8 +13,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from cybernews.CyberNews import CyberNews
 
 
-# -------- Pinecone Setup --------
-
 PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
 
 pc = Pinecone(api_key=PINECONE_API)
@@ -34,13 +32,8 @@ if index_name not in pc.list_indexes().names():
 index = pc.Index(index_name)
 namespace = "c2si"
 
-
-# -------- Embedding Model --------
-
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
-
-# -------- Scraping News (Parallel) --------
 
 news = CyberNews()
 newsBox = {}
@@ -74,8 +67,6 @@ with ThreadPoolExecutor(max_workers=6) as executor:
         key, articles = future.result()
         newsBox[key] = articles
 
-
-# -------- RSS Integration (Parallel) --------
 
 try:
     with open("config/rss_sources.json") as f:
@@ -121,16 +112,12 @@ except Exception as e:
     print("RSS loading failed:", e)
 
 
-# -------- Optimized Batched Ingestion --------
-
 existing_ids = set()
 
 texts = []
 ids = []
 metadata_list = []
 
-
-# -------- Collect Articles --------
 
 for news_type, articles in newsBox.items():
     for article in articles:
@@ -160,14 +147,10 @@ for news_type, articles in newsBox.items():
 print(f"Collected {len(texts)} unique articles")
 
 
-# -------- Guard Clause --------
-
 if not texts:
     print("No articles found. Exiting.")
     sys.exit()
 
-
-# -------- Batch Embedding --------
 
 print("Generating embeddings...")
 
@@ -180,8 +163,6 @@ embeddings = model.encode(
 print(f"Generated {len(embeddings)} embeddings")
 
 
-# -------- Prepare Pinecone Vectors --------
-
 vectors = []
 
 for i in range(len(ids)):
@@ -193,8 +174,6 @@ for i in range(len(ids)):
         )
     )
 
-
-# -------- Batch Upsert --------
 
 batch_size = 100
 
