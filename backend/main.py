@@ -1,10 +1,3 @@
-"""
-B0Bot – CyberSecurity News API (FastAPI)
-
-Entry-point that wires up middleware, exception handlers, routers,
-and shared application state via the ASGI lifespan protocol.
-"""
-
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -19,10 +12,6 @@ from app.services.news_service import NewsService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Initialise expensive, shared resources once at startup and
-    store them on ``app.state`` so they can be injected via Depends().
-    """
     settings = get_settings()
 
     repository = NewsRepository(settings)
@@ -30,9 +19,8 @@ async def lifespan(app: FastAPI):
 
     app.state.news_service = service
 
-    yield  # ── application is running ──
+    yield 
 
-    # Cleanup hooks (if needed in future phases)
 
 
 app = FastAPI(
@@ -46,23 +34,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── Middleware ────────────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # TODO: lock down for production
+    allow_origins=["*"],          
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Exception handlers ───────────────────────────────────────────────────────
 register_exception_handlers(app)
 
-# ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(news_router.router, prefix="/api/v1", tags=["News"])
 
 
-# ── Root / Health ─────────────────────────────────────────────────────────────
 @app.get("/", tags=["Health"])
 async def root():
     return {
@@ -82,8 +66,7 @@ async def health_check():
     return {"status": "healthy"}
 
 
-# ── Direct execution ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

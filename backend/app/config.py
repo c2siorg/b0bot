@@ -1,11 +1,11 @@
 
 from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     huggingface_token: str
+    huggingfacehub_api_token: str
     pinecone_api_key: str
 
     pinecone_index_name: str = "cybernews-index"
@@ -27,5 +27,4 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings() -> Settings:
-    """Singleton accessor – parsed once, cached forever."""
     return Settings()

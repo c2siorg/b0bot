@@ -1,30 +1,14 @@
-from functools import lru_cache
+from fastapi import Depends, HTTPException, Request
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-class Settings(BaseSettings):
-    """All env-vars consumed by the application."""
-
-    huggingface_token: str
-    pinecone_api_key: str
-
-    pinecone_index_name: str = "cybernews-index"
-    pinecone_namespace: str = "c2si"
-    pinecone_vector_dimension: int = 384
-
-    llm_config_path: str = "config/llm_config.json"
-    llm_temperature: float = 0.5
-
-    max_news_context: int = 50
-    max_news_results: int = 10
-
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+from app.services.news_service import NewsService
 
 
-@lru_cache()
-def get_settings() -> Settings:
-   return Settings()
+def get_news_service(request: Request) -> NewsService:
+    """Pull the NewsService that was created during lifespan startup."""
+    service = getattr(request.app.state, "news_service", None)
+    if service is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Internal configuration error: NewsService not initialised.",
+        )
+    return service
