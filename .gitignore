@@ -1,3 +1,6 @@
 .env
 .vercel
 __pycache__/
+backend/venv/
+venv/
+.venv/
