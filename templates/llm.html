@@ -98,13 +98,18 @@
 <body>
     <h1 id="title"><b>Welcome to b0bot!</b></h1>
     <h3 id="subtitle">You are now using <span id="baseLLM">an unknown LLM</span> as your base LLM</h3>
+    {% if keyword_error %}
+    <p style="color: #ffcccc; background: rgba(176, 0, 32, 0.35); padding: 8px 12px; border-radius: 6px;">
+        {{ keyword_error }}
+    </p>
+    {% endif %}
     <h3><b>Two available URL paths:</b></h3><br>
     <ul>
         <li><a id="newsLink" href="#"><code>/news</code></a></li><br>
         <li>
             <form id="newsKeywordsForm" action="#" method="GET">
                 <label for="keywords"><code>/news_keywords?keywords=</code></label>
-                <input type="text" id="keywords" name="keywords" placeholder="Place news keywords here">
+                <input type="text" id="keywords" name="keywords" placeholder="Place news keywords here" required>
                 <input type="submit" value="Submit">
             </form>
         </li>
@@ -115,6 +120,16 @@
             const baseLLM = "{{ llm_name }}";
             console.log('baseLLM:', baseLLM);
             renderContent(baseLLM);
+
+            const form = document.getElementById("newsKeywordsForm");
+            const keywordInput = document.getElementById("keywords");
+            form.addEventListener("submit", (event) => {
+                keywordInput.value = keywordInput.value.trim();
+                if (!keywordInput.value) {
+                    event.preventDefault();
+                    keywordInput.focus();
+                }
+            });
         });
     </script>
 </body>
