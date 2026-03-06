@@ -38,7 +38,7 @@ class NewsService:
                     repo_id=repo_id,
                     temperature=self._settings.llm_temperature,
                     max_new_tokens=1024,
-                    huggingfacehub_api_token=settings.huggingfacehub_api_token,
+                    huggingfacehub_api_token=settings.huggingface_token,
                 )
                 self._chat_models[model_name] = ChatHuggingFace(llm=llm)
                 logger.info("Initialised ChatHuggingFace for '%s' (%s)", model_name, repo_id)
