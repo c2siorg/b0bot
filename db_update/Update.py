@@ -99,4 +99,3 @@ for news_type, articles in newsBox.items():
         index.upsert([(document_id, vector, metadata)] , namespace=namespace)
         
         print(f"Inserted article ID: {document_id} with metadata into index: {index_name}")
-

@@ -1,6 +1,6 @@
 {
-    "mistralai": "mistralai/Mistral-7B-Instruct-v0.2",
-    "gemma": "google/gemma-2b",
+    "mistralai": "mistralai/Mistral-7B-Instruct-v0.2:featherless-ai",
+    "gemma": "google/gemma-3-12b-it:featherless-ai",
     "llama" : "meta-llama/Meta-Llama-3-8B-Instruct"
 
 }

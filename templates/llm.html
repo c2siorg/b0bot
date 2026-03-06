@@ -92,17 +92,34 @@
         input[type="submit"]:hover {
             background-color: #0288d1;
         }
+        .error-box {
+    background-color: #ff4d4d;
+    color: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-align: center;
+    width: 350px;
+}
     </style>
     <script src="{{ url_for('static', filename='js/content.js') }}"></script>
 </head>
 <body>
+    {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="error-box">
+      {{ messages[0] }}
+    </div>
+  {% endif %}
+{% endwith %}
     <h1 id="title"><b>Welcome to b0bot!</b></h1>
     <h3 id="subtitle">You are now using <span id="baseLLM">an unknown LLM</span> as your base LLM</h3>
     <h3><b>Two available URL paths:</b></h3><br>
     <ul>
         <li><a id="newsLink" href="#"><code>/news</code></a></li><br>
         <li>
-            <form id="newsKeywordsForm" action="#" method="GET">
+            <form id="newsKeywordsForm" action="/{{ llm_name }}/news_keywords" method="GET">
                 <label for="keywords"><code>/news_keywords?keywords=</code></label>
                 <input type="text" id="keywords" name="keywords" placeholder="Place news keywords here">
                 <input type="submit" value="Submit">
@@ -117,5 +134,11 @@
             renderContent(baseLLM);
         });
     </script>
+    <script>
+    setTimeout(() => {
+        const box = document.querySelector(".error-box");
+        if (box) box.style.display = "none";
+    }, 4000);
+</script>
 </body>
 </html>
