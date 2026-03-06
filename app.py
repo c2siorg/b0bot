@@ -1,7 +1,10 @@
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from flask import *
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 from routes.NewsRoutes import routes
+
+# Load environment variables
+load_dotenv()
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
