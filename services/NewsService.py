@@ -2,9 +2,9 @@ import os
 import json
 from dotenv import dotenv_values
 from flask import jsonify
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import HuggingFaceEndpoint
+#from langchain.chains import LLMChain - no use in the current version
+from langchain_huggingface import HuggingFaceEndpoint
+from langchain_core.prompts import PromptTemplate
 
 from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
@@ -66,7 +66,8 @@ class NewsService:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
         # Create the LLMChain with the prompt and llm
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
+        #updated the llm_chain to directly invoke the llm with the messages, as the prompt is already integrated into the messages template
+        llm_chain = prompt | self.llm
         output = llm_chain.invoke(messages)
 
         # Convert news data into JSON format
