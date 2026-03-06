@@ -12,10 +12,10 @@ from dotenv import load_dotenv
 from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from app.config import Settings
-from app.exceptions import LLMNotFoundError, LLMProcessingError, NewsFetchError
-from app.repositories.news_repository import NewsRepository
-from app.schemas.news import NewsItem, NewsResponse
+from app_config import Settings
+from exceptions import LLMNotFoundError, LLMProcessingError, NewsFetchError
+from repositories.news_repository import NewsRepository
+from schemas.news import NewsItem, NewsResponse
 
 load_dotenv()
 

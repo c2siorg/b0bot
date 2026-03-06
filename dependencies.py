@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, Request
 
-from app.services.news_service import NewsService
+from services.news_service import NewsService
 
 
 def get_news_service(request: Request) -> NewsService:

@@ -3,11 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
-from app.exceptions import register_exception_handlers
-from app.repositories.news_repository import NewsRepository
-from app.routers import news as news_router
-from app.services.news_service import NewsService
+from app_config import get_settings
+from exceptions import register_exception_handlers
+from repositories.news_repository import NewsRepository
+from routers import news as news_router
+from services.news_service import NewsService
 
 
 @asynccontextmanager

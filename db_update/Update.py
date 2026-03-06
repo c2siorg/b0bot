@@ -7,19 +7,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from cybernews.CyberNews import CyberNews
 
+env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'backend', '.env'))
+if not os.path.exists(env_path):
+    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+PINECONE_API = dotenv_values(env_path).get("PINECONE_API_KEY")
 
 # configure client
 pc = Pinecone(api_key=PINECONE_API)
 index_name = "cybernews-index"
 
-# Delete the index if it already exists, so as to save storage
 if index_name in pc.list_indexes().names():
     pc.delete_index(index_name)
     print(f"Deleted existing index: {index_name}")
 
-# Create or access the index
 if index_name not in pc.list_indexes():
     pc.create_index(
         name=index_name, 
@@ -30,15 +31,12 @@ if index_name not in pc.list_indexes():
             region='us-east-1'
         )
     )
-
-# Connect to the index
 index = pc.Index(index_name)
 
 namespace = "c2si"
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Different types of news
 news = CyberNews()
 
 newsBox = dict()
@@ -72,20 +70,15 @@ news = {
 Notice: "id" should be removed before the news is inserted into the database. newsImgURL also not important right now.
 """
 
-# Convert news articles to vectors and upsert into Pinecone
 for news_type, articles in newsBox.items():
     for article in articles:
-        # Combine headline and full news for embedding
         text = article["headlines"] + " " + article["fullNews"]
         
-        # Convert text to vector
-        vector = model.encode(text).tolist()  # Ensure the vector is a list
+        vector = model.encode(text).tolist() 
         
-        # Prepare the document ID (use unique identifiers from your data)
         document_id = article["id"]
         document_id = str(document_id)
         
-        # Prepare metadata
         metadata = {
             "headlines": article["headlines"],
             "author": article["author"],
@@ -95,7 +88,6 @@ for news_type, articles in newsBox.items():
             "newsDate": article["newsDate"]
         }
         
-        # Upsert the vector with metadata into Pinecone
         index.upsert([(document_id, vector, metadata)] , namespace=namespace)
         
         print(f"Inserted article ID: {document_id} with metadata into index: {index_name}")

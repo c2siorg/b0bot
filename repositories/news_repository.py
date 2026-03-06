@@ -6,7 +6,7 @@ import time
 from pinecone import Pinecone, ServerlessSpec
 from pinecone.exceptions import NotFoundException
 
-from app.config import Settings
+from app_config import Settings
 
 logger = logging.getLogger(__name__)
 

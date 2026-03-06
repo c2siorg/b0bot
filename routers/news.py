@@ -3,9 +3,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Query
 
-from app.dependencies import get_news_service        
-from app.schemas.news import ErrorResponse, ModelsResponse, NewsResponse
-from app.services.news_service import NewsService
+from dependencies import get_news_service        
+from schemas.news import ErrorResponse, ModelsResponse, NewsResponse
+from services.news_service import NewsService
 
 logger = logging.getLogger(__name__)
 

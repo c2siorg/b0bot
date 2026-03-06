@@ -1,0 +1,24 @@
+[project]
+name = "b0bot"
+version = "1.0.0"
+description = "B0Bot – CyberSecurity News API"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "langchain>=0.2.0",
+    "langchain-community>=0.2.0",
+    "langchain-huggingface>=0.1.0",
+    "huggingface-hub",
+    "pinecone-client",
+    "langchain-pinecone",
+    "sentence-transformers",
+    "beautifulsoup4>=4.11.2",
+    "lxml>=4.9.2",
+    "httpx>=0.23.3",
+    "requests>=2.28.2",
+    "python-dotenv",
+]
