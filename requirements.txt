@@ -13,3 +13,6 @@ requests==2.28.2
 pinecone-client
 langchain-pinecone
 sentence-transformers
+feedparser
+google-api-python-client
+newsapi-python
