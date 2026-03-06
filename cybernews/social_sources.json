@@ -1,0 +1,21 @@
+{
+    "rss": {
+        "feeds": [
+            "https://www.reddit.com/r/cybersecurity.rss",
+            "https://www.reddit.com/r/netsec.rss",
+            "https://krebsonsecurity.com/feed/",
+            "https://feeds.feedburner.com/TheHackersNews",
+            "https://www.bleepingcomputer.com/feed/",
+            "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+            "https://unit42.paloaltonetworks.com/feed/"
+        ]
+    },
+    "api_queries": {
+        "general": "cybersecurity news infosec",
+        "cyberAttack": "cyber attack hacking breach intrusion",
+        "malware": "malware ransomware trojan spyware",
+        "vulnerability": "CVE vulnerability exploit patch zero-day",
+        "dataBreach": "data breach leak stolen credentials",
+        "security": "information security threat intelligence OSINT"
+    }
+}
