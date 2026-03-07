@@ -40,39 +40,30 @@ https://huggingface.co/
 ```
 
 
-4. Add huggingface token in `.env` file
+4. Set up your environment variables
 
+Copy `.env.example` to `.env` and fill in your keys:
 ```
-# HuggingFace
-HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
-
-# Pinecone
-PINECONE_API_KEY='[Your pinecone api here]'
+cp .env.example .env
 ```
 
-
-5. Remember to replace the Pinecone connection string
-
-```
-# Example
-client = Pinecone(api_key={PINECONE_API}) # Replace the string with yours
-```
+Refer to [`.env.example`](.env.example) for all available keys and where to get them.
 
 
-6. Enrich/Update news data into your database
+5. Enrich/Update news data into your database
 
 Run `./db_update/Update.py` as a worker on a cloud service (e.g. heroku).
 Or, run `./db_update/Update.py` manually in local.
 
 
-7. Run the flask app
+6. Run the flask app
 
 `flask --app app.py run`
 
 > By default, the home page will open. The routes have to be defined manually.
 
 
-8. We have added support for the following routes:
+7. We have added support for the following routes:
 ```
 /llama          # Loads the Meta-Llama-3-8B-Instruct
 /gemma          # Loads the Gemma-2b
@@ -92,6 +83,13 @@ Or, run `./db_update/Update.py` manually in local.
 
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the avaialble paths above.
+
+
+## Social Connectors
+
+**Layer 1 — RSS Feeds:** Pulls cybersecurity news from 7 curated RSS feeds (Reddit, KrebsOnSecurity, BleepingComputer, CISA, etc.) with no API key required.
+
+**Layer 2 — Opt-in API Connectors:** Supports YouTube Data API v3 and NewsAPI.org for richer coverage. Both use free tiers and silently skip if keys are absent. See [`.env.example`](.env.example) for setup.
 
 
 ## High-Level Architecture Diagram

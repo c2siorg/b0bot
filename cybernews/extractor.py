@@ -98,18 +98,18 @@ class Extractor(Performance):
         )
         news_full_news = soup.select(value["fullNews"])
         news_url = soup.select(value["newsURL"])
-        news_img_url = soup.select(value["newsImg"])
+        news_img_url = soup.select(value["newsImg"]) if value["newsImg"] is not None else []
         raw_news_date = soup.select(value["date"]) if value["date"] is not None else ""
 
         for index in range(len(news_headlines)):
-            if raw_news_date:
+            if raw_news_date and index < len(raw_news_date):
                 news_date = self._news_date_extractor(
                     raw_news_date[index].text.strip(), raw_news_date
                 )
             else:
                 news_date = "N/A"
 
-            if raw_news_author:
+            if raw_news_author and index < len(raw_news_author):
                 news_author = self._author_name_extractor(
                     raw_news_author[index].text.strip()
                 )
@@ -119,19 +119,20 @@ class Extractor(Performance):
             if self._check_ad(news_date):
                 continue
 
-            if not self.valid_url_check(news_url[index]["href"]):
+            if index >= len(news_url) or not self.valid_url_check(news_url[index]["href"]):
                 continue
 
-            if self.spam_content_check(news_headlines[index].text.strip() + " " + news_full_news[index].text.strip()):
+            full_news_text = news_full_news[index].text.strip() if index < len(news_full_news) else ""
+            if self.spam_content_check(news_headlines[index].text.strip() + " " + full_news_text):
                 continue
 
             complete_news = {
                 "id": self.sorting.ordering_date(news_date),
                 "headlines": news_headlines[index].text.strip(),
                 "author": news_author,
-                "fullNews": news_full_news[index].text.strip(),
+                "fullNews": full_news_text,
                 "newsURL": news_url[index]["href"],
-                "newsImgURL": news_img_url[index]["data-src"],
+                "newsImgURL": news_img_url[index].get("data-src") or news_img_url[index].get("src", "N/A") if index < len(news_img_url) else "N/A",
                 "newsDate": news_date,
             }
             news_data_from_single_news.append(complete_news)
