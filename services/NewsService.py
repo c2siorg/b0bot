@@ -37,7 +37,12 @@ class NewsService:
     # Fetch news data from db:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
-        news_data = self.db.get_news_collections()
+
+        if user_keywords:
+            news_data = self.db.get_news_collections(is_keyword=True, keyword=user_keywords)
+        else:
+            news_data = self.db.get_news_collections()
+        
         news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
         template = """Question: {question}
