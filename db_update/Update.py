@@ -1,17 +1,15 @@
 import sys
 import os
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from pinecone import Pinecone , ServerlessSpec
 from sentence_transformers import SentenceTransformer
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from cybernews.CyberNews import CyberNews
-
-
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+load_dotenv()
 
 # configure client
-pc = Pinecone(api_key=PINECONE_API)
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 index_name = "cybernews-index"
 
 # Delete the index if it already exists, so as to save storage

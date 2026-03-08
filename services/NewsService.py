@@ -1,31 +1,31 @@
 import os
 import json
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from flask import jsonify
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
-from langchain_community.llms import HuggingFaceEndpoint
-
+from langchain_huggingface import HuggingFaceEndpoint
 from models.NewsModel import CybernewsDB
-env_vars = dotenv_values(".env")
-HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+from utils.redis_client import RedisClient
+load_dotenv()
+
+
 class NewsService:
     def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
-
+        self.redis = RedisClient(expiry=3600)
         # Load the LLM configuration
         with open('config/llm_config.json') as f:
             llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm 
+        self.model_name = llm_config.get(model_name) # loading the llm
         
-        if not repo_id:
-            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
+        if not model_name:
+            raise ValueError(f"Model '{self.model_name}' not found in llm_config.json")
         
         self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
+             temperature=0.5, model=self.model_name
+        )
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
@@ -34,9 +34,18 @@ class NewsService:
     """
 
     def getNews(self, user_keywords=None):
-    # Fetch news data from db:
-    # Only fetch data with valid `author` and `newsDate`
-    # Drop field "id" from collection
+        # Fetch news data from db:
+        # Only fetch data with valid `author` and `newsDate`
+        # Drop field "id" from collection
+        cache_key = f"news:{self.model_name}"
+        if user_keywords:
+            cache_key += f":{user_keywords}"
+
+        # Check if the data is cached
+        cached_news = self.redis.get(cache_key)
+        if cached_news:
+            return cached_news
+
         news_data = self.db.get_news_collections()
         news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
@@ -71,7 +80,9 @@ class NewsService:
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
-  
+        # Cache the data
+        self.redis.set(cache_key, news_JSON)
+
         return news_JSON
 
  
@@ -87,8 +98,17 @@ class NewsService:
     """
     
     def load_json_file(self, file_path):
+        cache_key = f"file:{file_path}"
+        cached_file = self.redis.get(cache_key)
+        if cached_file:
+            return cached_file
+
+        # If not cached, load from disk
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
+
+        # Cache file content with longer expiry (1 day)
+        self.redis.set(cache_key, data)
         return data
 
     """
