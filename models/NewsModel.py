@@ -1,9 +1,9 @@
-from config.Database import client
+from config.Database import client, index_name
 
 class CybernewsDB:
     def __init__(self):
         self.client = client
-        self.index_name = "cybernews-index"
+        self.index_name = index_name
         self.namespace = "c2si" 
         self.index = self.client.Index(self.index_name)
 

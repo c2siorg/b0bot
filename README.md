@@ -40,7 +40,7 @@ https://huggingface.co/
 ```
 
 
-4. Add huggingface token in `.env` file
+4. Add environment variables in `.env` file
 
 ```
 # HuggingFace
@@ -48,6 +48,7 @@ HUGGINGFACE_TOKEN='[Your_hugging_face_token_here]'
 
 # Pinecone
 PINECONE_API_KEY='[Your pinecone api here]'
+PINECONE_INDEX_NAME='news-index'
 ```
 
 
