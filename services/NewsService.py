@@ -11,21 +11,29 @@ env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
+    _llm_cache = {}     # reuse LLM connections across requests, keyed by model name
+    _llm_config = None  # load llm_config.json once instead of on every request
+
     def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
 
-        # Load the LLM configuration
-        with open('config/llm_config.json') as f:
-            llm_config = json.load(f)
+        # Load the LLM configuration only once for the lifetime of the process
+        if NewsService._llm_config is None:
+            with open('config/llm_config.json') as f:
+                NewsService._llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm 
-        
+        repo_id = NewsService._llm_config.get(model_name) # loading the llm
+
         if not repo_id:
             raise ValueError(f"Model '{model_name}' not found in llm_config.json")
-        
-        self.llm = HuggingFaceEndpoint(
+
+        # Reuse existing LLM connection if one was already created for this model
+        if model_name not in NewsService._llm_cache:
+            NewsService._llm_cache[model_name] = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
+        self.llm = NewsService._llm_cache[model_name]
+
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
