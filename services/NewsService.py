@@ -1,5 +1,6 @@
 import os
 import json
+import redis
 from dotenv import dotenv_values
 from flask import jsonify
 from langchain.chains import LLMChain
@@ -7,12 +8,20 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
+
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+
+# Load Redis connection settings from env
+redis_host = env_vars.get("REDIS_HOST", "localhost")
+redis_port = int(env_vars.get("REDIS_PORT", 6379))
+redis_db = int(env_vars.get("REDIS_DB", 0))
+
 class NewsService:
     def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
+        self.redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db, decode_responses=True)
 
         # Load the LLM configuration
         with open('config/llm_config.json') as f:
@@ -29,14 +38,8 @@ class NewsService:
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
-    """
-    Return news while checking if keyword has been specified or not
-    """
-
     def getNews(self, user_keywords=None):
-    # Fetch news data from db:
-    # Only fetch data with valid `author` and `newsDate`
-    # Drop field "id" from collection
+        # Fetch news data from db
         news_data = self.db.get_news_collections()
         news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
@@ -45,16 +48,13 @@ class NewsService:
 
         prompt = PromptTemplate.from_template(template)
 
-        # Determine which messages template to load
         if user_keywords:
             messages_template_path = 'prompts/withkey.json'
         else:
             messages_template_path = 'prompts/withoutkey.json'
-       
-        # Load the messages template from the JSON file
+        
         messages = self.load_json_file(messages_template_path)
 
-        # Replace placeholders in the messages
         for message in messages:
             if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
                 message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
@@ -65,35 +65,29 @@ class NewsService:
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
-        # Create the LLMChain with the prompt and llm
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
         output = llm_chain.invoke(messages)
 
-        # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
+        
+        self.redis_client.set("cached_news", news_JSON, ex=1800)  # Expires in 30 minutes
   
         return news_JSON
 
- 
-    """
-    deal requests with wrong route
-    """
+    def get_cached_news(self, keys):
+        pipe = self.redis_client.pipeline()
+        for key in keys:
+            pipe.get(key)
+        values = pipe.execute()
+        return values
 
     def notFound(self, error):
         return jsonify({"error": error}), 404
-    
-    """
-    Load JSON file
-    """
     
     def load_json_file(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
         return data
-
-    """
-    Convert news given by Huggingface endpoint API into JSON format.
-    """
 
     def toJSON(self, data: str):
         if len(data) == 0:
@@ -102,19 +96,16 @@ class NewsService:
         news_list_json = []
         news_list.pop(0)
         for item in news_list:
-            # Avoid dirty data
             if len(item) == 0:
                 continue
-            # Remove leading and trailing square brackets and split by comma and strip extra spaces
             data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
             data_list = [val.strip() for val in data_list]
 
             for i in data_list:
                 print(i)
                 print("----")
-                
+            
             print(data_list)
-            # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
             end_index = data_list[3].find(']') if len(data_list) > 3 else -1
             title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
