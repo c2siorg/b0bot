@@ -96,9 +96,11 @@ class NewsService:
     """
 
     def toJSON(self, data: str):
-        if len(data) == 0:
-            return {}
+        if not data:
+            return []
         news_list = data.split("\n")
+        if len(news_list) <= 1:
+            return []
         news_list_json = []
         news_list.pop(0)
         for item in news_list:
@@ -106,13 +108,13 @@ class NewsService:
             if len(item) == 0:
                 continue
             # Remove leading and trailing square brackets and split by comma and strip extra spaces
-            data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
+            data_list = [i.strip().strip('"') for i in item.strip('[').strip(']').split(',')]
             data_list = [val.strip() for val in data_list]
 
             for i in data_list:
                 print(i)
                 print("----")
-                
+
             print(data_list)
             # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
@@ -120,7 +122,10 @@ class NewsService:
             title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
             source = data_list[1] if len(data_list) > 1 else "No source provided"
             date = data_list[2] if len(data_list) > 2 else "No date provided"
-            url = data_list[3][:end_index-1] if len(data_list) > 3 else "No URL provided"
+            if len(data_list) > 3:
+                url = data_list[3][:end_index] if end_index > 0 else data_list[3]
+            else:
+                url = "No URL provided"
 
             news_item = {
                 "title": title,
@@ -130,5 +135,6 @@ class NewsService:
             }
             news_list_json.append(news_item)
 
-        news_list_json.pop()
+        if news_list_json:
+            news_list_json.pop()
         return news_list_json
