@@ -1,5 +1,6 @@
 import sys
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import dotenv_values
 from pinecone import Pinecone , ServerlessSpec
 from sentence_transformers import SentenceTransformer
@@ -41,19 +42,33 @@ model = SentenceTransformer('all-MiniLM-L6-v2')
 # Different types of news
 news = CyberNews()
 
-newsBox = dict()
+# Map newsBox keys to CyberNews category names
+categories = {
+    "general_news":       "general",
+    "cyber_attack_news":  "cyberAttack",
+    "vulnerability_news": "vulnerability",
+    "malware_news":       "malware",
+    "security_news":      "security",
+    "data_breach_news":   "dataBreach",
+}
 
-newsBox["general_news"] = news.get_news("general")
+newsBox = {}
 
-newsBox["cyber_attack_news"] = news.get_news("cyberAttack")
-
-newsBox["vulnerability_news"] = news.get_news("vulnerability")
-
-newsBox["malware_news"] = news.get_news("malware")
-
-newsBox["security_news"] = news.get_news("security")
-
-newsBox["data_breach_news"] = news.get_news("dataBreach")   
+# Fetch all categories concurrently instead of sequentially.
+# httpx.Client (used internally by Extractor) is thread-safe, so sharing
+# the same CyberNews instance across threads is safe.
+with ThreadPoolExecutor() as executor:
+    futures = {
+        executor.submit(news.get_news, cat_type): box_key
+        for box_key, cat_type in categories.items()
+    }
+    for future in as_completed(futures):
+        box_key = futures[future]
+        try:
+            newsBox[box_key] = future.result()
+        except Exception as e:
+            print(f"Failed to fetch '{box_key}': {e}")
+            newsBox[box_key] = []
 
 
 """
