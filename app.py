@@ -10,6 +10,11 @@ app = Flask(__name__)
 app.register_blueprint(routes)
 
 
+@app.errorhandler(404)
+def app_not_found(error):
+    return jsonify({"error": "Not Found", "detail": str(error)}), 404
+
+
 if __name__ == "__main__":
     # app.run(debug=True, host="0.0.0.0")
     app.run(debug=True)

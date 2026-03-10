@@ -92,11 +92,25 @@
         input[type="submit"]:hover {
             background-color: #0288d1;
         }
+        .error-banner {
+            width: 80%;
+            max-width: 900px;
+            background: rgba(255, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            color: #ffe4e1;
+            font-size: 1rem;
+        }
     </style>
     <script src="{{ url_for('static', filename='js/content.js') }}"></script>
 </head>
 <body>
     <h1 id="title"><b>Welcome to b0bot!</b></h1>
+    {% if error_message %}
+    <div class="error-banner" role="alert">{{ error_message }}</div>
+    {% endif %}
     <h3 id="subtitle">You are now using <span id="baseLLM">an unknown LLM</span> as your base LLM</h3>
     <h3><b>Two available URL paths:</b></h3><br>
     <ul>

@@ -50,7 +50,7 @@ class TestHealthRoutes(unittest.TestCase):
         self.assertEqual(response.get_json().get("status"), "not-ready")
 
     def test_not_found_route_returns_json_404(self):
-        response = self.client.get("/route-that-does-not-exist")
+        response = self.client.get("/route/that-does-not-exist")
         self.assertEqual(response.status_code, 404)
 
         payload = response.get_json()
