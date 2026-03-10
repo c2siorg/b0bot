@@ -90,6 +90,12 @@ Or, run `./db_update/Update.py` manually in local.
 /<llm-name>/news_keywords?keywords=[Place news keywords here]
 ```
 
+9. Operational probe routes
+```
+/health   # Liveness probe (service process is up)
+/ready    # Readiness probe (env/config/pinecone checks)
+```
+
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the avaialble paths above.
 

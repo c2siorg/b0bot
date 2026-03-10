@@ -1,5 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
+from config.health_checks import get_health_payload, get_readiness_payload
+
 routes = Blueprint("routes", __name__)
 news_controller = NewsController("mistralai") # default model name
 
@@ -9,6 +11,24 @@ home page route
 @routes.route("/", methods=["GET"])
 def home_route():
     return render_template("home.html")
+
+
+"""
+basic liveness endpoint for uptime probes
+"""
+@routes.route("/health", methods=["GET"])
+def health_route():
+    return jsonify(get_health_payload()), 200
+
+
+"""
+readiness endpoint checks env/config/external dependencies
+"""
+@routes.route("/ready", methods=["GET"])
+def readiness_route():
+    readiness = get_readiness_payload()
+    status_code = 200 if readiness["status"] == "ready" else 503
+    return jsonify(readiness), status_code
 
 
 """
@@ -49,4 +69,4 @@ deal requests with wrong route
 """
 @routes.errorhandler(404)
 def notFound_route(error):
-    g.news_controller.notFound(error)
+    return jsonify({"error": "Not Found", "detail": str(error)}), 404
