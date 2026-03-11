@@ -56,11 +56,21 @@ def update_database(overwrite=(len(sys.argv) > 1 and sys.argv[1] == '--overwrite
     print("Loading local sparse model (prithivida/Splade_PP_en_v2)...")
     sparse_model = SparseEncoder("prithivida/Splade_PP_en_v2")
     
+    # Track locally seen URLs to prevent processing duplicates across different sources
+    seen_urls = set()
     all_records = []
     for news_type, articles in newsBox.items():
         if not articles:
             continue
         for article in articles:
+            url = str(article.get("newsURL", "")).strip()
+            
+            # Simple cross-source deduplication of Article URLs
+            if url in seen_urls:
+                print(f"Skipping duplicate article by URL: {url}")
+                continue
+            seen_urls.add(url)
+
             headlines = article.get("headlines")
             full_news = article.get("fullNews")
             if not headlines or not full_news:
