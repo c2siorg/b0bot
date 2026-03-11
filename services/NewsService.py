@@ -6,13 +6,13 @@ from langchain_classic.chains import LLMChain
 from langchain_classic.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
-from models.NewsModel_Hybrid import CybernewsDBHybrid
+from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 # os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
     def __init__(self, model_name=None) -> None:
-        self.db = CybernewsDBHybrid()
+        self.db = CybernewsDB()
         self.llm = None
         self.model_name = model_name
 
