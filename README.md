@@ -104,6 +104,8 @@ In addition, to keep the knowledge base of news up to date, a scheduled script w
 
 ![Knowledge Base](assets/db_arch.png)
 
+As of 2026, the core NewsService has been modernized using LangChain Expression Language (LCEL) and Pydantic v2 to ensure schema-validated, asynchronous news processing
+
 
 The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
 
