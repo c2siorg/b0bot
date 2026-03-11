@@ -59,9 +59,9 @@ When a user sends a request, B0Bot retrieves relevant cybersecurity news from it
 1. Install Dependencies
 
 Install all required Python packages:
-
-pip install -r ./requirements.txt
-
+```bash
+pip install -r requirements.txt
+```
 2. Set Up Pinecone Database
 
 Create an account:
@@ -85,18 +85,19 @@ Generate an access token.
 4. Configure Environment Variables
 
 Add the following values in your .env file:
+
+```env
 # HuggingFace
 HUGGINGFACE_TOKEN=your_huggingface_token
 
 # Pinecone
 PINECONE_API_KEY=your_pinecone_api_key
-
-
+```
 5. Configure Pinecone Connection
 
 Update the connection string in the project code:
 
-client = Pinecone(api_key={PINECONE_API})
+`client = Pinecone(api_key={PINECONE_API})`
 
 Replace it with your own API key.
 
@@ -104,15 +105,17 @@ Replace it with your own API key.
 
 Run the update worker to scrape and enrich cybersecurity news:
 
+```bash
 python ./db_update/Update.py
-
+```
 You may also run it as a background worker on cloud platforms such as Heroku or Render.
 
 7. Run the Flask Application
 
 Start the API server:
+```bash
 flask --app app.py run
-
+```
 By default the home page will load.
 
 
@@ -121,22 +124,21 @@ By default the home page will load.
 ### Available Models
 
 The API supports multiple LLM models.
-
+```bash
 /llama       → Loads Meta-Llama-3-8B-Instruct
 /gemma       → Loads Gemma-2B
 /mistralai   → Loads Mistral-7B-Instruct-v0.2
 
-
+```
 ### Available API Endpoints
 
-Get latest cybersecurity news:
+Get latest Cybersecurity news:
 
 /<llm-name>/news
 
 Search news using keywords:
 
-/<llm-name>/news_keywords?keywords=cyberattack
-
+`/<llm-name>/news_keywords?keywords=cyberattack`
 Example:
 
 /llama/news
@@ -156,12 +158,12 @@ Two available url paths
 
 /<llm-name>/news
 /<llm-name>/news_keywords?keywords=[Place news keywords here]
-```
+
 
 > [!IMPORTANT]
 > The interface will only work if you specify the one of the available paths above.
 
-🤝Contributing
+## 🤝 Contributing
 We welcome contributions! If you are a new contributor:
 
 Fork the repository and create your branch from main.
@@ -178,13 +180,13 @@ The API runs as a Flask backend that communicates with LangChain and HuggingFace
 
 Workflow:
 
-1.Cybersecurity news is scraped from trusted websites.
+1. Cybersecurity news is scraped from trusted websites.
 
-2.Data is stored in a MongoDB Atlas knowledge base.
+2. Data is stored in a MongoDB Atlas knowledge base.
 
-3.News embeddings are stored in Pinecone vector database.
+3. News embeddings are stored in Pinecone vector database.
 
-4.When a user requests the API:
+4. When a user requests the API:
 
 relevant news is retrieved
 
@@ -192,7 +194,7 @@ context is passed to an LLM
 
 the LLM generates a response
 
-5.The API returns the result as JSON output.
+5. The API returns the result as JSON output.
 
 ![Architecture](assets/arch.png)
 
@@ -201,7 +203,7 @@ the LLM generates a response
 
 The API will continuously run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successful operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
 
-🚀 Roadmap & Future Enhancements
+## 🚀 Roadmap & Future Enhancements
 We are currently evolving B0Bot into an Agentic AI framework. Planned features include:
 
 Tool Integration: Allowing the LLM to search live CVE databases (NVD) and GitHub Security Advisories.
