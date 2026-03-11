@@ -28,8 +28,7 @@ return news without considering keywords
 @routes.route("/<llm_name>/news", methods=["GET"])
 def getNews_route(llm_name):
     g.news_controller = NewsController(llm_name)
-    llm_flag = True
-    news = g.news_controller.getNews(llm=llm_flag)
+    news = g.news_controller.getNews()
     return render_template("news.html", data=news)
 
 
@@ -41,9 +40,8 @@ def getNewsWithKeywords_route(llm_name):
     # get list of keywords as argument from User's request
     g.news_controller = NewsController(llm_name)
     user_keywords = request.args.getlist("keywords")
-    llm_flag = True
-    data = g.news_controller.getNewsWithKeywords(user_keywords[0], llm=llm_flag)
-    return render_template("news_key.html", data=data,keyword=user_keywords[0])
+    data = g.news_controller.getNewsWithKeywords(user_keywords[0])
+    return render_template("news_key.html", data=data, keyword=user_keywords[0])
 
 
 """
