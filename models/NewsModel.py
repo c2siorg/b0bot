@@ -2,11 +2,15 @@ from config.Database import client
 from datetime import datetime
 
 class CybernewsDB:
-    def __init__(self):
+    def __init__(self, dense_model=None, sparse_model=None):
         self.client = client
-        self.index_name = "cybernews-hybrid-test"
+        self.index_name = "cybernews-hybrid-test-2"
         self.namespace = "c2si" 
         self.index = self.client.Index(self.index_name)
+        
+        # Accept globally initialized models instead of loading per-request
+        self.dense_model = dense_model
+        self.sparse_model = sparse_model
 
     @staticmethod
     def parse_date(date_str):
@@ -55,19 +59,25 @@ class CybernewsDB:
         if not keyword:
             return []
 
-        # 1. Generate Dense Vector using Pinecone Inference
-        dense_query_embedding = self.client.inference.embed(
-            model="llama-text-embed-v2",
-            inputs=[keyword],
-            parameters={"dimension": 384, "input_type": "query", "truncate": "END"}
-        )
+        # 1. Generate Dense Vector locally
+        dense_vector = self.dense_model.encode(keyword).tolist()
+        dense_query_embedding = [{'values': dense_vector}]
         
-        # 2. Generate Sparse Vector using Pinecone Inference
-        sparse_query_embedding = self.client.inference.embed(
-            model="pinecone-sparse-english-v0",
-            inputs=[keyword],
-            parameters={"input_type": "query", "truncate": "END"}
-        )
+        # 2. Generate Sparse Vector locally
+        import numpy as np
+        emb = self.sparse_model.encode(keyword)
+        if hasattr(emb, 'to_dense'):
+            emb = emb.to_dense()
+        if hasattr(emb, 'cpu'):
+            emb = emb.cpu()
+        
+        emb_array = np.array(emb)
+        if len(emb_array.shape) == 2:
+            emb_array = emb_array[0]
+            
+        indices = np.nonzero(emb_array)[0].tolist()
+        values = [float(emb_array[i]) for i in indices]
+        sparse_query_embedding = [{'sparse_indices': indices, 'sparse_values': values}]
 
         # 3. Execute Hybrid Query 
         final_list = []
@@ -105,12 +115,21 @@ class CybernewsDB:
         if not keyword:
             return []
 
-        # 1. Generate Sparse Vector using Pinecone Inference
-        sparse_query_embedding = self.client.inference.embed(
-            model="pinecone-sparse-english-v0",
-            inputs=[keyword],
-            parameters={"input_type": "query", "truncate": "END"}
-        )
+        # 1. Generate Sparse Vector locally
+        import numpy as np
+        emb = self.sparse_model.encode(keyword)
+        if hasattr(emb, 'to_dense'):
+            emb = emb.to_dense()
+        if hasattr(emb, 'cpu'):
+            emb = emb.cpu()
+        
+        emb_array = np.array(emb)
+        if len(emb_array.shape) == 2:
+            emb_array = emb_array[0]
+            
+        indices = np.nonzero(emb_array)[0].tolist()
+        values = [float(emb_array[i]) for i in indices]
+        sparse_query_embedding = [{'sparse_indices': indices, 'sparse_values': values}]
 
         # 2. Execute Lexical Query (Provide dummy zero vector to satisfy Pinecone requirement)
         final_list = []
