@@ -6,8 +6,6 @@ from routes.NewsRoutes import routes
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
-
-# Bind rate limiter to app
 limiter.init_app(app)
 
 # Register routes

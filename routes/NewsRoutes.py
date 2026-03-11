@@ -1,7 +1,6 @@
 from flask import *
 from controllers.NewsController import NewsController
 from config.limiter import limiter
-
 routes = Blueprint("routes", __name__)
 news_controller = NewsController("mistralai") # default model name
 
@@ -28,7 +27,7 @@ def set_llm_route(llm_name):
 return news without considering keywords
 """
 @routes.route("/<llm_name>/news", methods=["GET"])
-@limiter.limit("10 per minute")  # Limit expensive LLM API calls
+@limiter.limit("10 per minute") 
 def getNews_route(llm_name):
     g.news_controller = NewsController(llm_name)
     news = g.news_controller.getNews()
@@ -39,7 +38,7 @@ def getNews_route(llm_name):
 return news based on certain keywords
 """
 @routes.route("/<llm_name>/news_keywords", methods=["GET"])
-@limiter.limit("10 per minute")  # Limit expensive LLM API calls
+@limiter.limit("10 per minute")
 def getNewsWithKeywords_route(llm_name):
     # get list of keywords as argument from User's request
     g.news_controller = NewsController(llm_name)
