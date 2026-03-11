@@ -66,8 +66,8 @@ Or, run `./db_update/Update.py` manually in local.
 7. We have added support for the following routes:
 ```
 /llama          # Loads the Meta-Llama-3-8B-Instruct
-/gemma          # Loads the Gemma-2b
-/mistralai      # Loads the Mistral-7B-Instruct-v0.2
+/gemma          # Loads the Gemma-2-9b-it
+/qwen           # Loads the Qwen2.5-72B-Instruct
 ``` 
 
 > [!NOTE]

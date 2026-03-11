@@ -1,10 +1,9 @@
 import os
 import json
+import re
 from dotenv import dotenv_values
 from flask import jsonify
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import HuggingFaceEndpoint
+from huggingface_hub import InferenceClient
 
 from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
@@ -23,27 +22,36 @@ class NewsService:
         if not repo_id:
             raise ValueError(f"Model '{model_name}' not found in llm_config.json")
         
-        self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
+        self.client = InferenceClient(
+                model=repo_id,
+                token=HUGGINGFACEHUB_API_TOKEN,
             )
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
+        self.max_news_candidates = 50
+        self.max_news_payload_chars = 12000
 
     """
     Return news while checking if keyword has been specified or not
     """
 
     def getNews(self, user_keywords=None):
-    # Fetch news data from db:
-    # Only fetch data with valid `author` and `newsDate`
-    # Drop field "id" from collection
-        news_data = self.db.get_news_collections()
-        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
+        # Fetch news data from db:
+        # Only fetch data with valid `author` and `newsDate`
+        # Drop field "id" from collection
+        all_news_data = self.db.get_news_collections()
+        # Keep a wider initial candidate set; compact+trim later based on payload size.
+        prompt_candidates = all_news_data[:self.max_news_candidates]
 
-        template = """Question: {question}
-        Answer: Let's think step by step."""
+        # Keep only fields required for prompting to avoid oversized payloads.
+        prompt_news = self.compact_news_for_prompt(prompt_candidates)
+        fallback_pool = self.compact_news_for_prompt(all_news_data)
 
-        prompt = PromptTemplate.from_template(template)
+        # Keep structured JSON and trim by full items to avoid malformed prompt data.
+        trimmed_news = prompt_news[:]
+        while trimmed_news and len(json.dumps(trimmed_news, ensure_ascii=False)) > self.max_news_payload_chars:
+            trimmed_news.pop()
+        news_data_str = json.dumps(trimmed_news, ensure_ascii=False)
 
         # Determine which messages template to load
         if user_keywords:
@@ -57,7 +65,7 @@ class NewsService:
         # Replace placeholders in the messages
         for message in messages:
             if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
-                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
+                message['content'] = message['content'].replace('<news_data_placeholder>', news_data_str)
             if user_keywords and message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
                 message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
             if message['role'] == 'user' and '{news_format}' in message['content']:
@@ -65,14 +73,21 @@ class NewsService:
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
-        # Create the LLMChain with the prompt and llm
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output = llm_chain.invoke(messages)
+        # Use chat_completion for instruction-tuned models
+        response = self.client.chat_completion(
+            messages=messages,
+            max_tokens=1024,
+            temperature=0.5,
+        )
+
+        output = response.choices[0].message.content
 
         # Convert news data into JSON format
-        news_JSON = self.toJSON(output['text'])
-  
-        return news_JSON
+        news_JSON = self.toJSON(output)
+        fallback_items = self.fallback_news(fallback_pool)
+        news_JSON = self.merge_news_results(news_JSON, fallback_items, self.news_number)
+
+        return news_JSON[:self.news_number]
 
  
     """
@@ -96,39 +111,146 @@ class NewsService:
     """
 
     def toJSON(self, data: str):
-        if len(data) == 0:
-            return {}
-        news_list = data.split("\n")
+        if not data or not data.strip():
+            return []
+
+        text = data.strip()
         news_list_json = []
-        news_list.pop(0)
-        for item in news_list:
-            # Avoid dirty data
-            if len(item) == 0:
+
+        # Remove markdown code fences if the model wraps the answer.
+        if text.startswith("```"):
+            text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
+            text = re.sub(r"\n?```$", "", text).strip()
+
+        # Try direct JSON first.
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, dict):
+                        title = str(item.get("title", "")).strip()
+                        if not title:
+                            continue
+                        news_list_json.append({
+                            "title": title,
+                            "source": str(item.get("source", "No source provided")).strip() or "No source provided",
+                            "date": str(item.get("date", "No date provided")).strip() or "No date provided",
+                            "url": str(item.get("url", "N/A")).strip() or "N/A",
+                        })
+                    elif isinstance(item, list) and len(item) >= 4:
+                        news_list_json.append({
+                            "title": str(item[0]).strip(),
+                            "source": str(item[1]).strip(),
+                            "date": str(item[2]).strip(),
+                            "url": str(item[3]).strip() or "N/A",
+                        })
+            if news_list_json:
+                return news_list_json
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+        # Fallback: parse line-based output in bracket format.
+        # Some models return a single line with ';' delimiters, so normalize first.
+        normalized_text = text.replace("];", "]\n")
+        for raw_line in normalized_text.splitlines():
+            line = raw_line.strip().rstrip(";")
+            if not line:
                 continue
-            # Remove leading and trailing square brackets and split by comma and strip extra spaces
-            data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
-            data_list = [val.strip() for val in data_list]
 
-            for i in data_list:
-                print(i)
-                print("----")
-                
-            print(data_list)
-            # Assign default values for missing elements
-            start_index = data_list[0].find('[') if len(data_list) > 0 else -1
-            end_index = data_list[3].find(']') if len(data_list) > 3 else -1
-            title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
-            source = data_list[1] if len(data_list) > 1 else "No source provided"
-            date = data_list[2] if len(data_list) > 2 else "No date provided"
-            url = data_list[3][:end_index-1] if len(data_list) > 3 else "No URL provided"
+            # Remove numbering like "1. " or "2) ".
+            line = re.sub(r"^\d+[\.\)]\s*", "", line)
 
-            news_item = {
+            # If line contains brackets, keep only the bracket content.
+            match = re.search(r"\[(.*)\]", line)
+            if match:
+                line = match.group(1).strip()
+
+            parts = [part.strip().strip('"').strip("'") for part in line.rsplit(",", 3)]
+            if len(parts) < 4:
+                continue
+
+            title, source, date, url = parts[0], parts[1], parts[2], parts[3]
+            if not title:
+                continue
+
+            news_list_json.append({
                 "title": title,
-                "source": source,
-                "date": date,
-                "url": url,
-            }
-            news_list_json.append(news_item)
+                "source": source or "No source provided",
+                "date": date or "No date provided",
+                "url": url or "N/A",
+            })
 
-        news_list_json.pop()
         return news_list_json
+
+    def fallback_news(self, news_data):
+        fallback = []
+        for item in news_data:
+            if not isinstance(item, dict):
+                continue
+
+            title = str(item.get("headlines") or item.get("title") or "").strip()
+            if not title:
+                continue
+
+            fallback.append({
+                "title": title,
+                "source": str(item.get("author") or item.get("source") or "Unknown source").strip(),
+                "date": str(item.get("newsDate") or item.get("date") or "Unknown date").strip(),
+                "url": str(item.get("newsURL") or item.get("url") or "N/A").strip(),
+            })
+
+        return fallback
+
+    def merge_news_results(self, primary_items, fallback_items, limit):
+        merged = []
+        seen_keys = set()
+
+        def add_items(items):
+            for item in items:
+                if len(merged) >= limit:
+                    return
+                if not isinstance(item, dict):
+                    continue
+
+                title = str(item.get("title", "")).strip()
+                source = str(item.get("source", "")).strip()
+                date = str(item.get("date", "")).strip()
+                url = str(item.get("url", "")).strip()
+
+                if not title:
+                    continue
+
+                dedupe_key = (title.lower(), url.lower() if url else "", source.lower(), date)
+                if dedupe_key in seen_keys:
+                    continue
+
+                seen_keys.add(dedupe_key)
+                merged.append({
+                    "title": title,
+                    "source": source or "No source provided",
+                    "date": date or "No date provided",
+                    "url": url or "N/A",
+                })
+
+        add_items(primary_items or [])
+        add_items(fallback_items or [])
+        return merged
+
+    def compact_news_for_prompt(self, news_data):
+        compact = []
+        for item in news_data:
+            if not isinstance(item, dict):
+                continue
+
+            title = str(item.get("headlines") or item.get("title") or "").strip()
+            if not title:
+                continue
+
+            compact.append({
+                "title": title,
+                "source": str(item.get("author") or item.get("source") or "Unknown source").strip(),
+                "date": str(item.get("newsDate") or item.get("date") or "Unknown date").strip(),
+                "url": str(item.get("newsURL") or item.get("url") or "N/A").strip(),
+            })
+
+        return compact
