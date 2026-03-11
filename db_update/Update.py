@@ -18,13 +18,8 @@ PINECONE_API = os.environ.get("PINECONE_API_KEY")
 pc = Pinecone(api_key=PINECONE_API)
 index_name = "cybernews-index"
 
-# Delete the index if it already exists, so as to save storage
-if index_name in pc.list_indexes().names():
-    pc.delete_index(index_name)
-    print(f"Deleted existing index: {index_name}")
-
 # Create or access the index
-if index_name not in pc.list_indexes():
+if index_name not in pc.list_indexes().names():
     pc.create_index(
         name=index_name, 
         dimension=384, 
