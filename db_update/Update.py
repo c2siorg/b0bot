@@ -129,3 +129,5 @@ for news_type, articles in newsBox.items():
             continue # Skip failed article and move to next
 
 print("✨ Database update complete!")
+
+# End of script
