@@ -1,10 +1,14 @@
 from dotenv import dotenv_values
 from flask import *
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from config.limiter import limiter
 from routes.NewsRoutes import routes
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
+
+# Bind rate limiter to app
+limiter.init_app(app)
 
 # Register routes
 app.register_blueprint(routes)
