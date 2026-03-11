@@ -1,14 +1,18 @@
 import sys
 import os
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from pinecone import Pinecone , ServerlessSpec
 from sentence_transformers import SentenceTransformer
+
+# Load environment variables from .env
+load_dotenv()
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from cybernews.CyberNews import CyberNews
 
 
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+
+PINECONE_API = os.environ.get("PINECONE_API_KEY")
 
 # configure client
 pc = Pinecone(api_key=PINECONE_API)
