@@ -109,10 +109,14 @@ def update_database(overwrite=(len(sys.argv) > 1 and sys.argv[1] == '--overwrite
             except Exception as e:
                 print(f"Error processing article {article.get('id')}: {e}")
 
-    # Upsert all records in batch
+    # Upsert all records in batches of 100
     if all_records:
-        index.upsert(vectors=all_records, namespace=namespace)
-        print(f"Successfully upserted {len(all_records)} hybrid records into {index_name}")
+        batch_size = 100
+        for i in range(0, len(all_records), batch_size):
+            batch = all_records[i : i + batch_size]
+            index.upsert(vectors=batch, namespace=namespace)
+            print(f"Successfully upserted batch {i//batch_size + 1}: {len(batch)} hybrid records into {index_name}")
+        print(f"Finished upserting all {len(all_records)} hybrid records.")
 
 if __name__ == "__main__":
     update_database()
