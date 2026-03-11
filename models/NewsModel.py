@@ -2,15 +2,16 @@ from config.Database import client
 from datetime import datetime
 
 class CybernewsDB:
-    def __init__(self, dense_model=None, sparse_model=None):
+    def __init__(self):
+        from sentence_transformers import SentenceTransformer, SparseEncoder
         self.client = client
         self.index_name = "cybernews-hybrid-test-2"
         self.namespace = "c2si" 
         self.index = self.client.Index(self.index_name)
         
-        # Accept globally initialized models instead of loading per-request
-        self.dense_model = dense_model
-        self.sparse_model = sparse_model
+        # Initialize native local embedding models
+        self.dense_model = SentenceTransformer("all-MiniLM-L6-v2")
+        self.sparse_model = SparseEncoder("prithivida/Splade_PP_en_v2")
 
     @staticmethod
     def parse_date(date_str):
