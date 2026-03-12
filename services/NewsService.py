@@ -2,28 +2,31 @@ import os
 import json
 from dotenv import dotenv_values
 from flask import jsonify
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
+from langchain_classic.chains import LLMChain
+from langchain_classic.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+# os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
-    def __init__(self , model_name) -> None:
+    def __init__(self, model_name=None) -> None:
         self.db = CybernewsDB()
+        self.llm = None
+        self.model_name = model_name
 
-        # Load the LLM configuration
-        with open('config/llm_config.json') as f:
-            llm_config = json.load(f)
+        # Only load the LLM configuration if a model_name is provided
+        if model_name:
+            with open('config/llm_config.json') as f:
+                llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm 
-        
-        if not repo_id:
-            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
-        
-        self.llm = HuggingFaceEndpoint(
+            repo_id = llm_config.get(model_name)
+            
+            if not repo_id:
+                raise ValueError(f"Model '{model_name}' not found in llm_config.json")
+            
+            self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
@@ -33,11 +36,28 @@ class NewsService:
     Return news while checking if keyword has been specified or not
     """
 
-    def getNews(self, user_keywords=None):
+    def getNews(self, user_keywords=None, llm=False):
     # Fetch news data from db:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
-        news_data = self.db.get_news_collections()
+
+        if user_keywords:
+            news_data = self.db.get_news_collections(is_keyword=True, keyword=user_keywords)
+        else:
+            news_data = self.db.get_news_collections()
+        
+        if not llm:
+            # Map raw database results to the standard format if LLM is skipped
+            return [
+                {
+                    "title": doc.get('headlines', 'No title provided'),
+                    "source": doc.get('author', 'No source provided'),
+                    "date": doc.get('newsDate', 'No date provided'),
+                    "url": doc.get('newsURL', 'No URL provided'),
+                }
+                for doc in news_data[:self.news_number]
+            ]
+            
         news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
         template = """Question: {question}

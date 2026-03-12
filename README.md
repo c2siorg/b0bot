@@ -75,14 +75,18 @@ Or, run `./db_update/Update.py` manually in local.
 > You can do so by visiting this [link](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct).
 
 
-8. Two available url paths
+8. Available url paths
 ```
 /<llm-name>/news
 /<llm-name>/news_keywords?keywords=[Place news keywords here]
+
+# Bypass LLM mapping forraw hybrid search results
+/raw/news
+/raw/news_keywords?keywords=[Place news keywords here]
 ```
 
 > [!IMPORTANT]
-> The interface will only work if you specify the one of the avaialble paths above.
+> The interface will only work if you specify one of the available paths above.
 
 
 ## Social Connectors

@@ -22,6 +22,7 @@ function renderContent(baseLLM) {
     };
 
     const selectedContent = content[baseLLM];
+    
     if (selectedContent) {
         document.getElementById('title').innerText = selectedContent.title;
         document.getElementById('subtitle').innerText = selectedContent.subtitle;
