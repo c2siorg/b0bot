@@ -7,25 +7,63 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
-env_vars = dotenv_values(".env")
-HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+
+
 class NewsService:
+    _llm_config_cache = None
+    _llm_client_cache = {}
+    _huggingface_token = None
+
+    @classmethod
+    def _load_llm_config(cls):
+        if cls._llm_config_cache is None:
+            with open("config/llm_config.json", "r", encoding="utf-8") as config_file:
+                cls._llm_config_cache = json.load(config_file)
+        return cls._llm_config_cache
+
+    @classmethod
+    def _resolve_huggingface_token(cls):
+        if cls._huggingface_token:
+            return cls._huggingface_token
+
+        env_vars = dotenv_values(".env")
+        token = (
+            env_vars.get("HUGGINGFACE_TOKEN")
+            or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+            or os.environ.get("HUGGINGFACE_TOKEN")
+        )
+
+        if not token:
+            raise RuntimeError(
+                "HUGGINGFACE_TOKEN is missing. Copy .env.example to .env and set HUGGINGFACE_TOKEN."
+            )
+
+        os.environ["HUGGINGFACEHUB_API_TOKEN"] = token
+        cls._huggingface_token = token
+        return token
+
+    @classmethod
+    def _get_or_create_llm(cls, model_name, repo_id):
+        if model_name in cls._llm_client_cache:
+            return cls._llm_client_cache[model_name]
+
+        token = cls._resolve_huggingface_token()
+        llm = HuggingFaceEndpoint(repo_id=repo_id, temperature=0.5, token=token)
+        cls._llm_client_cache[model_name] = llm
+        return llm
+
     def __init__(self , model_name) -> None:
         self.db = CybernewsDB()
 
         # Load the LLM configuration
-        with open('config/llm_config.json') as f:
-            llm_config = json.load(f)
+        llm_config = self._load_llm_config()
 
         repo_id = llm_config.get(model_name) # loading the llm 
         
         if not repo_id:
             raise ValueError(f"Model '{model_name}' not found in llm_config.json")
         
-        self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
+        self.llm = self._get_or_create_llm(model_name, repo_id)
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
