@@ -1,7 +1,7 @@
 import sys
 import os
 from dotenv import load_dotenv
-from pinecone import Pinecone , ServerlessSpec
+from pinecone import Pinecone, ServerlessSpec
 from sentence_transformers import SentenceTransformer
 
 # Load environment variables from .env
@@ -17,14 +17,16 @@ PINECONE_API = os.environ.get("PINECONE_API_KEY")
 # configure client
 pc = Pinecone(api_key=PINECONE_API)
 index_name = "cybernews-index"
+existing_indexes = pc.list_indexes().names()
 
 # Delete the index if it already exists, so as to save storage
-if index_name in pc.list_indexes().names():
+if index_name in existing_indexes:
     pc.delete_index(index_name)
     print(f"Deleted existing index: {index_name}")
 
 # Create or access the index
-if index_name not in pc.list_indexes():
+existing_indexes = pc.list_indexes().names()
+if index_name not in existing_indexes:
     pc.create_index(
         name=index_name, 
         dimension=384, 
