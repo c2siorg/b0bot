@@ -35,6 +35,18 @@ class Sorting:
 
         return news
 
+    def _ordering_key(self, individual_news):
+        news_date = individual_news.get("newsDate", "N/A")
+        date_order = self.ordering_date(news_date)
+        if date_order != 1:
+            return date_order
+
+        existing_id = individual_news.get("id", 1)
+        try:
+            return int(existing_id)
+        except (TypeError, ValueError):
+            return 1
+
     """
         Ordering Date
     """
@@ -67,9 +79,7 @@ class Sorting:
     """
 
     def ordering_news(self, news):
-        data = sorted(
-            news, key=lambda individual_news: individual_news["id"], reverse=True
-        )
+        data = sorted(news, key=self._ordering_key, reverse=True)
 
         data = self._ordering_id(data)
         return data
