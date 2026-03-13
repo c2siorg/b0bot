@@ -49,4 +49,5 @@ deal requests with wrong route
 """
 @routes.errorhandler(404)
 def notFound_route(error):
-    g.news_controller.notFound(error)
+    controller = getattr(g, "news_controller", news_controller)
+    return controller.notFound(error)
