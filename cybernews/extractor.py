@@ -119,7 +119,11 @@ class Extractor(Performance):
             if self._check_ad(news_date):
                 continue
 
-            if index >= len(news_url) or not self.valid_url_check(news_url[index]["href"]):
+            if index >= len(news_url):
+                continue
+
+            href = news_url[index].get("href", "")
+            if not self.valid_url_check(href):
                 continue
 
             full_news_text = news_full_news[index].text.strip() if index < len(news_full_news) else ""
@@ -131,7 +135,7 @@ class Extractor(Performance):
                 "headlines": news_headlines[index].text.strip(),
                 "author": news_author,
                 "fullNews": full_news_text,
-                "newsURL": news_url[index]["href"],
+                "newsURL": href,
                 "newsImgURL": news_img_url[index].get("data-src") or news_img_url[index].get("src", "N/A") if index < len(news_img_url) else "N/A",
                 "newsDate": news_date,
             }
