@@ -5,19 +5,19 @@ function renderContent(baseLLM) {
             title: "Welcome to b0bot!",
             subtitle: "You are now using Gemma-2b as your base LLM",
             newsPath: "/gemma/news",
-            newsKeywordsPath: "/gemma/news_keywords?keywords="
+            newsKeywordsPath: "/gemma/news_keywords"
         },
         llama: {
             title: "Welcome to b0bot!",
             subtitle: "You are now using Llama-3 as your base LLM",
             newsPath: "/llama/news",
-            newsKeywordsPath: "/llama/news_keywords?keywords="
+            newsKeywordsPath: "/llama/news_keywords"
         },
         mistralai: {
             title: "Welcome to b0bot!",
             subtitle: "You are now using MistralAI as your base LLM",
             newsPath: "/mistralai/news",
-            newsKeywordsPath: "/mistralai/news_keywords?keywords="
+            newsKeywordsPath: "/mistralai/news_keywords"
         }
     };
 
