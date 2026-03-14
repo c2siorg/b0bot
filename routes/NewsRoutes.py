@@ -1,4 +1,4 @@
-from flask import *
+from flask import Blueprint, g, render_template, request
 from controllers.NewsController import NewsController
 routes = Blueprint("routes", __name__)
 news_controller = NewsController("mistralai") # default model name

@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from flask import *
+from flask import Flask
 from langchain_core.prompts import PromptTemplate
 from routes.NewsRoutes import routes
 
