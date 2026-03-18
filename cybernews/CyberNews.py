@@ -1,9 +1,12 @@
 import json
 import os
+import logging
 from cybernews.extractor import Extractor
 from cybernews.social_connectors.rss_extractor import RSSExtractor
 from cybernews.social_connectors.youtube_connector import YouTubeConnector
 from cybernews.social_connectors.newsapi_connector import NewsAPIConnector
+
+logger = logging.getLogger(__name__)
 
 class CyberNews:
     def __init__(self) -> None:
@@ -34,7 +37,7 @@ class CyberNews:
                 try:
                     combined_news.extend(self._extractor.data_extractor(news_type[news]))
                 except Exception as e:
-                    print(f"Web extraction error for '{news}': {e}")
+                    logger.warning("Web extraction error for '%s': %s", news, e)
                     
         # 2. Fetch from Social Extractors (only on relevant cybersecurity topics)
         if news in ['general', 'cyberAttack', 'dataBreach', 'vulnerability', 'security', 'malware']:
@@ -44,23 +47,33 @@ class CyberNews:
                 # Layer 1: Free RSS feeds (Reddit, Krebs, BleepingComputer, CISA, etc.)
                 if "rss" in self._social_sources and "feeds" in self._social_sources["rss"]:
                     rss_data = self._rss_extractor.process_feeds(self._social_sources["rss"]["feeds"])
-                    print(f"[{news}] RSS feeds → {len(rss_data)} articles")
+                    logger.info("[%s] RSS feeds -> %d articles", news, len(rss_data))
                     combined_news.extend(rss_data)
 
                 # Layer 2: Optional YouTube Data API v3 (requires YOUTUBE_API_KEY)
                 youtube_data = self._youtube_connector.extract(query=api_query)
                 if youtube_data:
-                    print(f"[{news}] YouTube API → {len(youtube_data)} videos (query: '{api_query}')")
+                    logger.info(
+                        "[%s] YouTube API -> %d videos (query: %r)",
+                        news,
+                        len(youtube_data),
+                        api_query,
+                    )
                 combined_news.extend(youtube_data)
 
                 # Layer 2: Optional NewsAPI.org (requires NEWSAPI_KEY)
                 newsapi_data = self._newsapi_connector.extract(query=api_query)
                 if newsapi_data:
-                    print(f"[{news}] NewsAPI → {len(newsapi_data)} articles (query: '{api_query}')")
+                    logger.info(
+                        "[%s] NewsAPI -> %d articles (query: %r)",
+                        news,
+                        len(newsapi_data),
+                        api_query,
+                    )
                 combined_news.extend(newsapi_data)
 
             except Exception as e:
-                print(f"Social extraction error: {e}")
+                logger.warning("Social extraction error for '%s': %s", news, e)
 
         if not combined_news:
             raise ValueError(f"News type '{news}' not found or yielded zero results")

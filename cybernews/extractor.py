@@ -2,12 +2,16 @@
     Class for Exception Handling and Extracting data out of complex strings
 """
 import concurrent.futures
+import logging
 
 import httpx
 from bs4 import BeautifulSoup
 
 from .performance import Performance
 from .sorting import Sorting
+
+
+logger = logging.getLogger(__name__)
 
 
 class Extractor(Performance):
@@ -90,7 +94,7 @@ class Extractor(Performance):
             response = self.session.get(url, timeout=20, headers=self.headers)
             soup = BeautifulSoup(response.text, "lxml")
         except (httpx.RequestError, httpx.TimeoutException) as e:
-            print(f"Request to {url} failed: {e}")
+            logger.warning("Request to %s failed: %s", url, e)
             return []
         news_headlines = soup.select(value["headlines"])
         raw_news_author = (
@@ -171,7 +175,7 @@ class Extractor(Performance):
                     news_data_from_single_news = future.result()
                     news_data.extend(news_data_from_single_news)
                 except Exception as exc:
-                    print(f"{url} generated an exception: {exc}")
+                    logger.error("%s generated an exception: %s", url, exc)
 
         # Remove duplicates before sorting
         unique_news_data = self._remove_duplicates(news_data)

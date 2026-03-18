@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime
 from cybernews.performance import Performance
 from cybernews.sorting import Sorting
@@ -6,6 +7,9 @@ from cybernews.sorting import Sorting
 # NOTE: Requires NEWSAPI_KEY in your .env
 # Get a free key (100 requests/day) instantly at: https://newsapi.org/register
 # No credit card required.
+
+logger = logging.getLogger(__name__)
+
 
 class NewsAPIConnector(Performance):
     """
@@ -27,18 +31,21 @@ class NewsAPIConnector(Performance):
 
         api_key = os.environ.get("NEWSAPI_KEY")
         if not api_key:
-            print("[NewsAPI Connector] Skipping: NEWSAPI_KEY not found in env.")
+            logger.info("[NewsAPI Connector] Skipping: NEWSAPI_KEY not found in env.")
             return
 
         try:
             from newsapi import NewsApiClient
             self._client = NewsApiClient(api_key=api_key)
             self.is_configured = True
-            print("[NewsAPI Connector] Initialized successfully.")
+            logger.info("[NewsAPI Connector] Initialized successfully.")
         except ImportError:
-            print("[NewsAPI Connector] Skipping: 'newsapi-python' not installed. Run: pip install newsapi-python")
+            logger.warning(
+                "[NewsAPI Connector] Skipping: 'newsapi-python' not installed. "
+                "Run: pip install newsapi-python"
+            )
         except Exception as e:
-            print(f"[NewsAPI Connector] Initialization failed: {e}")
+            logger.error("[NewsAPI Connector] Initialization failed: %s", e)
 
     def extract(self, query: str = None) -> list:
         """
@@ -101,7 +108,7 @@ class NewsAPIConnector(Performance):
                 })
 
         except Exception as e:
-            print(f"[NewsAPI Connector] Extraction failed: {e}")
+            logger.error("[NewsAPI Connector] Extraction failed: %s", e)
 
         # Deduplicate
         seen = set()
