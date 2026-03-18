@@ -1,7 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
 routes = Blueprint("routes", __name__)
-news_controller = NewsController("mistralai") # default model name
+# news_controller = NewsController("mistralai") # default model name
 
 """
 home page route
@@ -41,7 +41,30 @@ def getNewsWithKeywords_route(llm_name):
     g.news_controller = NewsController(llm_name)
     user_keywords = request.args.getlist("keywords")
     data = g.news_controller.getNewsWithKeywords(user_keywords[0])
-    return render_template("news_key.html", data=data,keyword=user_keywords[0])
+    return render_template("news_key.html", data=data, keyword=user_keywords[0])
+
+
+"""
+return news without considering keywords (NO LLM)
+"""
+@routes.route("/raw/news", methods=["GET"])
+def getNews_raw_route():
+    # Instantiate without a model to bypass LLM initialization entirely
+    g.news_controller = NewsController(None)
+    news = g.news_controller.getNews()
+    return render_template("news.html", data=news, llm_name="raw")
+
+
+"""
+return news based on certain keywords (NO LLM)
+"""
+@routes.route("/raw/news_keywords", methods=["GET"])
+def getNewsWithKeywords_raw_route():
+    # Instantiate without a model to bypass LLM initialization entirely
+    g.news_controller = NewsController(None)
+    user_keywords = request.args.getlist("keywords")
+    data = g.news_controller.getNewsWithKeywords(user_keywords[0])
+    return render_template("news_key.html", data=data, keyword=user_keywords[0], llm_name="raw")
 
 
 """

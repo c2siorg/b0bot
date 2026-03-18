@@ -1,27 +1,36 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>b0bot</title>
     <link href="{{ url_for('static', filename='css/home.css') }}" rel="stylesheet">
 </head>
+
 <body>
     <h1><b>Welcome to b0bot!</b></h1>
     <h3>Your CyberSecurity News API for Automated Bots</h3>
-    
+
+    <h2>Raw Database Search (Extremely Fast, No LLM):</h2>
+    <ul>
+        <li><a href="/raw/news"><span class="icon">⚡</span><span><code>/raw/news</code> (Latest Docs)</span></a></li>
+        <br>
+        <li>
+            <form action="/raw/news_keywords" method="GET">
+                <span class="icon" style="color:#ffffff; margin-left: 10px;">🔍</span>
+                <input type="text" name="keywords" placeholder="Keywords (e.g., botnet, RAT)">
+                <input type="submit" value="Search">
+            </form>
+        </li>
+    </ul>
+
     <h2>3 Available LLMs to Choose From:</h2>
     <ul>
         <li><a href="/llama"><span class="icon">⚙️</span><span>Meta-Llama-3-8B-Instruct</span></a></li><br>
         <li><a href="/gemma"><span class="icon">⚙️</span><span>Gemma-2b</span></a></li><br>
         <li><a href="/mistralai"><span class="icon">⚙️</span><span>Mistral-7B-Instruct-v0.2</span></a></li>
     </ul>
-    
-    <h2>3 Available URL Paths:</h2>
-    <ul>
-        <li><a href="/llama"><span class="icon">🔗</span><span><code>/llama</code></span></a></li><br>
-        <li><a href="/gemma"><span class="icon">🔗</span><span><code>/gemma</code></span></a></li><br>
-        <li><a href="/mistralai"><span class="icon">🔗</span><span><code>/mistralai</code></span></a></li>
-    </ul>
 </body>
+
 </html>

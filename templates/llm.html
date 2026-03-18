@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,14 @@
     <link href="{{ url_for('static', filename='css/llm.css') }}" rel="stylesheet">
     <script src="{{ url_for('static', filename='js/content.js') }}"></script>
 </head>
+
 <body>
     <h1 id="title"><b>Welcome to b0bot!</b></h1>
     <h3 id="subtitle">You are now using <span id="baseLLM">an unknown LLM</span> as your base LLM</h3>
-    <h3><b>Two available URL paths:</b></h3><br>
+
+    <h3><b>Two available URL paths:</b></h3>
     <ul>
-        <li><a id="newsLink" href="#"><code>/news</code></a></li><br>
+        <li><a id="newsLink" href="#"><code>/news</code></a></li>
         <li>
             <form id="newsKeywordsForm" action="#" method="GET">
                 <label for="keywords"><code>/news_keywords?keywords=</code></label>
@@ -25,9 +28,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const baseLLM = "{{ llm_name }}";
-            console.log('baseLLM:', baseLLM);
             renderContent(baseLLM);
         });
     </script>
 </body>
+
 </html>
