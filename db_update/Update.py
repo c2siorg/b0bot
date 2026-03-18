@@ -10,7 +10,8 @@ PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
 
 # Configure client
 pc = Pinecone(api_key=PINECONE_API)
-index_name = dotenv_values(".env").get("PINECONE_INDEX_NAME")
+index_name = str.lower(dotenv_values(".env").get("PINECONE_INDEX_NAME")) # pinecone index name must be in lowercase
+
 
 
 
