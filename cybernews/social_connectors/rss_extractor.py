@@ -1,5 +1,6 @@
 import feedparser
 import warnings
+import logging
 from datetime import datetime
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
 from cybernews.performance import Performance
@@ -7,6 +8,9 @@ from cybernews.sorting import Sorting
 
 # Suppress BeautifulSoup warning for URL-like strings from some feed summaries
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
+
+logger = logging.getLogger(__name__)
+
 
 class RSSExtractor(Performance):
     def __init__(self):
@@ -49,7 +53,7 @@ class RSSExtractor(Performance):
                     }
                     news_data.append(item)
             except Exception as e:
-                print(f"[RSS Error] Failed to parse {feed_url}: {e}")
+                logger.warning("[RSS Error] Failed to parse %s: %s", feed_url, e)
 
         # Basic deduplication across feeds
         seen = set()

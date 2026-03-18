@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime
 from cybernews.performance import Performance
 from cybernews.sorting import Sorting
@@ -6,6 +7,9 @@ from cybernews.sorting import Sorting
 # NOTE: Requires YOUTUBE_API_KEY in your .env
 # Get a free key (10,000 units/day) at: https://console.cloud.google.com
 # Enable "YouTube Data API v3" in your Google Cloud project.
+
+logger = logging.getLogger(__name__)
+
 
 class YouTubeConnector(Performance):
     """
@@ -27,18 +31,23 @@ class YouTubeConnector(Performance):
 
         api_key = os.environ.get("YOUTUBE_API_KEY")
         if not api_key:
-            print("[YouTube Connector] Skipping: YOUTUBE_API_KEY not found in env.")
+            logger.info(
+                "[YouTube Connector] Skipping: YOUTUBE_API_KEY not found in env."
+            )
             return
 
         try:
             from googleapiclient.discovery import build
             self._youtube = build("youtube", "v3", developerKey=api_key)
             self.is_configured = True
-            print("[YouTube Connector] Initialized successfully.")
+            logger.info("[YouTube Connector] Initialized successfully.")
         except ImportError:
-            print("[YouTube Connector] Skipping: 'google-api-python-client' not installed. Run: pip install google-api-python-client")
+            logger.warning(
+                "[YouTube Connector] Skipping: 'google-api-python-client' not installed. "
+                "Run: pip install google-api-python-client"
+            )
         except Exception as e:
-            print(f"[YouTube Connector] Initialization failed: {e}")
+            logger.error("[YouTube Connector] Initialization failed: %s", e)
 
     def extract(self, query: str = None) -> list:
         """
@@ -98,7 +107,7 @@ class YouTubeConnector(Performance):
                 })
 
         except Exception as e:
-            print(f"[YouTube Connector] Extraction failed: {e}")
+            logger.error("[YouTube Connector] Extraction failed: %s", e)
 
         # Deduplicate
         seen = set()

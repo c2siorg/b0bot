@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from dotenv import dotenv_values
 from flask import jsonify
 from langchain.chains import LLMChain
@@ -7,6 +8,8 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
+
+logger = logging.getLogger(__name__)
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
@@ -18,9 +21,10 @@ class NewsService:
         with open('config/llm_config.json') as f:
             llm_config = json.load(f)
 
-        repo_id = llm_config.get(model_name) # loading the llm 
-        
+        repo_id = llm_config.get(model_name)  # loading the llm
+
         if not repo_id:
+            logger.error("Model %r not found in llm_config.json", model_name)
             raise ValueError(f"Model '{model_name}' not found in llm_config.json")
         
         self.llm = HuggingFaceEndpoint(
@@ -38,7 +42,8 @@ class NewsService:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
         news_data = self.db.get_news_collections()
-        news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
+        news_data = news_data[:50]  # limit the number of news to 50 , as LLMs have a context limit
+        logger.info("Fetched %d news items from vector store", len(news_data))
 
         template = """Question: {question}
         Answer: Let's think step by step."""
@@ -108,12 +113,6 @@ class NewsService:
             # Remove leading and trailing square brackets and split by comma and strip extra spaces
             data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
             data_list = [val.strip() for val in data_list]
-
-            for i in data_list:
-                print(i)
-                print("----")
-                
-            print(data_list)
             # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
             end_index = data_list[3].find(']') if len(data_list) > 3 else -1

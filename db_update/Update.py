@@ -1,5 +1,6 @@
 import sys
 import os
+import logging
 from dotenv import load_dotenv
 from pinecone import Pinecone , ServerlessSpec
 from sentence_transformers import SentenceTransformer
@@ -11,6 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from cybernews.CyberNews import CyberNews
 
 
+logger = logging.getLogger(__name__)
 
 PINECONE_API = os.environ.get("PINECONE_API_KEY")
 
@@ -21,7 +23,7 @@ index_name = "cybernews-index"
 # Delete the index if it already exists, so as to save storage
 if index_name in pc.list_indexes().names():
     pc.delete_index(index_name)
-    print(f"Deleted existing index: {index_name}")
+    logger.info("Deleted existing index: %s", index_name)
 
 # Create or access the index
 if index_name not in pc.list_indexes():
@@ -101,6 +103,5 @@ for news_type, articles in newsBox.items():
         
         # Upsert the vector with metadata into Pinecone
         index.upsert([(document_id, vector, metadata)] , namespace=namespace)
-        
-        print(f"Inserted article ID: {document_id} with metadata into index: {index_name}")
+        logger.info("Inserted article ID %s into index %s", document_id, index_name)
 
