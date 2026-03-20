@@ -101,7 +101,7 @@ class NewsService:
 
  
     """
-    deal requests with wrong routeQ
+    deal requests with wrong route
     """
 
     def notFound(self, error):
