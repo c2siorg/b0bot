@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from dotenv import dotenv_values
 from flask import jsonify
@@ -29,7 +30,6 @@ class NewsService:
             self.llm = HuggingFaceEndpoint(
                 repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
             )
-        self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
     """
@@ -60,6 +60,18 @@ class NewsService:
             
         news_data = news_data[:50] # limit the number of news to 50 , as LLMs have a context limit
 
+        # Build a numbered article list for the LLM (URLs are NOT sent)
+        numbered_list_lines = []
+        article_metadata = {}  # index -> full metadata dict
+        for i, doc in enumerate(news_data, start=1):
+            headline = doc.get('headlines', 'N/A')
+            source = doc.get('author', 'N/A')
+            date = doc.get('newsDate', 'N/A')
+            numbered_list_lines.append(f"[{i}] {headline} — {source} — {date}")
+            article_metadata[i] = doc
+
+        numbered_list_str = "\n".join(numbered_list_lines)
+
         template = """Question: {question}
         Answer: Let's think step by step."""
 
@@ -77,11 +89,9 @@ class NewsService:
         # Replace placeholders in the messages
         for message in messages:
             if message['role'] == 'user' and '<news_data_placeholder>' in message['content']:
-                message['content'] = message['content'].replace('<news_data_placeholder>', str(news_data))
+                message['content'] = message['content'].replace('<news_data_placeholder>', numbered_list_str)
             if user_keywords and message['role'] == 'user' and '<user_keywords_placeholder>' in message['content']:
                 message['content'] = message['content'].replace('<user_keywords_placeholder>', str(user_keywords))
-            if message['role'] == 'user' and '{news_format}' in message['content']:
-                message['content'] = message['content'].replace('{news_format}', self.news_format)
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
@@ -89,8 +99,8 @@ class NewsService:
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
         output = llm_chain.invoke(messages)
 
-        # Convert news data into JSON format
-        news_JSON = self.toJSON(output['text'])
+        # Resolve selected indices back to full article metadata
+        news_JSON = self.resolve_indices(output['text'], article_metadata)
   
         return news_JSON
 
@@ -112,43 +122,32 @@ class NewsService:
         return data
 
     """
-    Convert news given by Huggingface endpoint API into JSON format.
+    Parse the LLM output for selected article indices and resolve them
+    to full article metadata. URLs are never taken from LLM output.
     """
 
-    def toJSON(self, data: str):
-        if len(data) == 0:
-            return {}
-        news_list = data.split("\n")
+    @staticmethod
+    def resolve_indices(llm_output: str, article_metadata: dict):
+        if not llm_output or len(llm_output.strip()) == 0:
+            return []
+
+        # Extract all integers from the LLM output
+        raw_indices = re.findall(r'\d+', llm_output)
+
+        seen = set()
         news_list_json = []
-        news_list.pop(0)
-        for item in news_list:
-            # Avoid dirty data
-            if len(item) == 0:
+        for idx_str in raw_indices:
+            idx = int(idx_str)
+            if idx in seen or idx not in article_metadata:
                 continue
-            # Remove leading and trailing square brackets and split by comma and strip extra spaces
-            data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
-            data_list = [val.strip() for val in data_list]
-
-            for i in data_list:
-                print(i)
-                print("----")
-                
-            print(data_list)
-            # Assign default values for missing elements
-            start_index = data_list[0].find('[') if len(data_list) > 0 else -1
-            end_index = data_list[3].find(']') if len(data_list) > 3 else -1
-            title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
-            source = data_list[1] if len(data_list) > 1 else "No source provided"
-            date = data_list[2] if len(data_list) > 2 else "No date provided"
-            url = data_list[3][:end_index-1] if len(data_list) > 3 else "No URL provided"
-
+            seen.add(idx)
+            doc = article_metadata[idx]
             news_item = {
-                "title": title,
-                "source": source,
-                "date": date,
-                "url": url,
+                "title": doc.get('headlines', 'No title provided'),
+                "source": doc.get('author', 'No source provided'),
+                "date": doc.get('newsDate', 'No date provided'),
+                "url": doc.get('newsURL', 'No URL provided'),
             }
             news_list_json.append(news_item)
 
-        news_list_json.pop()
         return news_list_json

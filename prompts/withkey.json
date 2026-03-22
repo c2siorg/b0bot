@@ -1,7 +1,7 @@
 [
     {
         "role": "system",
-        "content": "You are a news analyzer that will read the given cyber security news and return the answer based on the user's requirement."
+        "content": "You are a cybersecurity news curator. You will receive a numbered list of article headlines. Your job is to select the best articles matching a given keyword and return ONLY their index numbers."
     },
     {
         "role": "user",
@@ -9,7 +9,7 @@
     },
     {
         "role": "assistant",
-        "content": "I have read the news you provided. Now please give me your keywords."
+        "content": "I have read the numbered article list. Now please give me your keywords."
     },
     {
         "role": "user",
@@ -17,10 +17,10 @@
     },
     {
         "role": "assistant",
-        "content": "I have read the keywords you provided. Now please tell me how you want me to generate the answers."
+        "content": "I have noted the keywords. Please tell me your selection criteria."
     },
     {
         "role": "user",
-        "content": "Please give me a list of the most recent cybersecurity news based on the news and keyword given above. Indicate the source and date. Each news should be strictly in the format of {news_format}. Your reply should be news-only, without adding any of your conversational content. Do not use bullet points. Do not use regex. Only give the output in the required format. Do not stop generating the answer until it is complete. Return at most {news_number} news. Return the news strictly in the required format. do not leave any key empty. if you do not have information, make up some."
+        "content": "Select the {news_number} most relevant and recent cybersecurity news articles from the list above that relate to the given keywords.\n\nSelection rules:\n- ONLY select genuine news articles reporting on real cybersecurity events, incidents, vulnerabilities, breaches, or policy changes.\n- Prioritize articles that are most relevant to the provided keywords.\n- EXCLUDE the following: webinar invitations, marketing or promotional content, product/tool announcements that are not news, Reddit self-posts or discussion threads, sponsored content, job postings, opinion pieces without a news event, and generic advisories without a specific incident.\n\nReturn ONLY the index numbers of your selected articles as a comma-separated list. Example output: 1, 4, 7, 12\n\nDo not include any other text, explanation, or formatting. Only output the comma-separated index numbers."
     }
 ]
