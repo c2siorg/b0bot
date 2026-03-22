@@ -1,11 +1,20 @@
 from config.Database import client
 from datetime import datetime
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class CybernewsDB:
     def __init__(self):
         from sentence_transformers import SentenceTransformer, SparseEncoder
         self.client = client
-        self.index_name = "cybernews-hybrid-test-2"
+        
+        index_name = os.getenv("PINECONE_INDEX_NAME")
+        if not index_name:
+            raise ValueError("PINECONE_INDEX_NAME environment variable is missing in .env")
+            
+        self.index_name = index_name.lower()
         self.namespace = "c2si" 
         self.index = self.client.Index(self.index_name)
         
