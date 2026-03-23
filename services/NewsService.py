@@ -9,26 +9,39 @@ from langchain_community.llms import HuggingFaceEndpoint
 from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-# os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+
+if not HUGGINGFACEHUB_API_TOKEN:
+    raise ValueError("HUGGINGFACE_TOKEN is missing. Please set it in your .env file. See .env.example for reference.")
+
+_LLM_CONFIG_CACHE = None
+_LLM_CLIENT_CACHE = {}
+
+def _get_llm_config():
+    global _LLM_CONFIG_CACHE
+    if _LLM_CONFIG_CACHE is None:
+        with open('config/llm_config.json') as f:
+            _LLM_CONFIG_CACHE = json.load(f)
+    return _LLM_CONFIG_CACHE
+
+def _get_llm_client(model_name):
+    if model_name not in _LLM_CLIENT_CACHE:
+        llm_config = _get_llm_config()
+        repo_id = llm_config.get(model_name)
+        if not repo_id:
+            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
+        _LLM_CLIENT_CACHE[model_name] = HuggingFaceEndpoint(
+            repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
+        )
+    return _LLM_CLIENT_CACHE[model_name]
+
 class NewsService:
     def __init__(self, model_name=None) -> None:
         self.db = CybernewsDB()
         self.llm = None
         self.model_name = model_name
 
-        # Only load the LLM configuration if a model_name is provided
         if model_name:
-            with open('config/llm_config.json') as f:
-                llm_config = json.load(f)
-
-            repo_id = llm_config.get(model_name)
-            
-            if not repo_id:
-                raise ValueError(f"Model '{model_name}' not found in llm_config.json")
-            
-            self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
+            self.llm = _get_llm_client(model_name)
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
@@ -116,39 +129,42 @@ class NewsService:
     """
 
     def toJSON(self, data: str):
-        if len(data) == 0:
-            return {}
+        if not data or len(data) == 0:
+            return []
         news_list = data.split("\n")
         news_list_json = []
+        
+        if len(news_list) <= 1:
+            return []
+            
         news_list.pop(0)
         for item in news_list:
-            # Avoid dirty data
             if len(item) == 0:
                 continue
-            # Remove leading and trailing square brackets and split by comma and strip extra spaces
-            data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
-            data_list = [val.strip() for val in data_list]
-
-            for i in data_list:
-                print(i)
-                print("----")
+            try:
+                data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
+                data_list = [val.strip() for val in data_list]
                 
-            print(data_list)
-            # Assign default values for missing elements
-            start_index = data_list[0].find('[') if len(data_list) > 0 else -1
-            end_index = data_list[3].find(']') if len(data_list) > 3 else -1
-            title = data_list[0][start_index+1:] if len(data_list) > 0 else "No title provided"
-            source = data_list[1] if len(data_list) > 1 else "No source provided"
-            date = data_list[2] if len(data_list) > 2 else "No date provided"
-            url = data_list[3][:end_index-1] if len(data_list) > 3 else "No URL provided"
+                if len(data_list) < 4:
+                    continue
+                    
+                start_index = data_list[0].find('[') if len(data_list) > 0 else -1
+                end_index = data_list[3].find(']') if len(data_list) > 3 else -1
+                title = data_list[0][start_index+1:] if len(data_list) > 0 and start_index >= 0 else data_list[0]
+                source = data_list[1] if len(data_list) > 1 else "No source provided"
+                date = data_list[2] if len(data_list) > 2 else "No date provided"
+                url = data_list[3][:end_index-1] if len(data_list) > 3 and end_index > 0 else data_list[3]
 
-            news_item = {
-                "title": title,
-                "source": source,
-                "date": date,
-                "url": url,
-            }
-            news_list_json.append(news_item)
-
-        news_list_json.pop()
+                news_item = {
+                    "title": title,
+                    "source": source,
+                    "date": date,
+                    "url": url,
+                }
+                news_list_json.append(news_item)
+            except (IndexError, AttributeError):
+                continue
+                
+        if news_list_json:
+            news_list_json.pop()
         return news_list_json
