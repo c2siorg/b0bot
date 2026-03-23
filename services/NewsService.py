@@ -9,26 +9,39 @@ from langchain_community.llms import HuggingFaceEndpoint
 from models.NewsModel import CybernewsDB
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
-# os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
+
+if not HUGGINGFACEHUB_API_TOKEN:
+    raise ValueError("HUGGINGFACE_TOKEN is missing. Please set it in your .env file. See .env.example for reference.")
+
+_LLM_CONFIG_CACHE = None
+_LLM_CLIENT_CACHE = {}
+
+def _get_llm_config():
+    global _LLM_CONFIG_CACHE
+    if _LLM_CONFIG_CACHE is None:
+        with open('config/llm_config.json') as f:
+            _LLM_CONFIG_CACHE = json.load(f)
+    return _LLM_CONFIG_CACHE
+
+def _get_llm_client(model_name):
+    if model_name not in _LLM_CLIENT_CACHE:
+        llm_config = _get_llm_config()
+        repo_id = llm_config.get(model_name)
+        if not repo_id:
+            raise ValueError(f"Model '{model_name}' not found in llm_config.json")
+        _LLM_CLIENT_CACHE[model_name] = HuggingFaceEndpoint(
+            repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
+        )
+    return _LLM_CLIENT_CACHE[model_name]
+
 class NewsService:
     def __init__(self, model_name=None) -> None:
         self.db = CybernewsDB()
         self.llm = None
         self.model_name = model_name
 
-        # Only load the LLM configuration if a model_name is provided
         if model_name:
-            with open('config/llm_config.json') as f:
-                llm_config = json.load(f)
-
-            repo_id = llm_config.get(model_name)
-            
-            if not repo_id:
-                raise ValueError(f"Model '{model_name}' not found in llm_config.json")
-            
-            self.llm = HuggingFaceEndpoint(
-                repo_id=repo_id, temperature=0.5, token=HUGGINGFACEHUB_API_TOKEN
-            )
+            self.llm = _get_llm_client(model_name)
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
