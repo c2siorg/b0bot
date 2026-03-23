@@ -119,7 +119,7 @@ class Extractor(Performance):
             if self._check_ad(news_date):
                 continue
 
-            if index >= len(news_url) or not self.valid_url_check(news_url[index]["href"]):
+            if index >= len(news_url) or not news_url[index].get("href") or not self.valid_url_check(news_url[index].get("href", "")):
                 continue
 
             full_news_text = news_full_news[index].text.strip() if index < len(news_full_news) else ""
