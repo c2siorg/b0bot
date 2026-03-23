@@ -68,7 +68,7 @@ class Sorting:
 
     def ordering_news(self, news):
         data = sorted(
-            news, key=lambda individual_news: individual_news["id"], reverse=True
+            news, key=lambda individual_news: self.ordering_date(individual_news.get("newsDate", "N/A")), reverse=True
         )
 
         data = self._ordering_id(data)
