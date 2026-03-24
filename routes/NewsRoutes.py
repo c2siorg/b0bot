@@ -73,3 +73,14 @@ deal requests with wrong route
 @routes.errorhandler(404)
 def notFound_route(error):
     g.news_controller.notFound(error)
+
+"""
+Cache Statistics endpoint
+"""
+@routes.route("/cache/stats", methods=["GET"])
+def cache_stats_route():
+    # We need a news_controller to get the stats
+    if not hasattr(g, 'news_controller'):
+         g.news_controller = NewsController(None)
+    stats = g.news_controller.news_service.semantic_cache.get_stats() if g.news_controller.news_service.semantic_cache else {"error": "Cache disabled"}
+    return jsonify(stats)
