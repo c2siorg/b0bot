@@ -7,6 +7,11 @@ from langchain_classic.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
+from config.Database import SemanticCache
+from config.cache_config import REDIS_HOST, REDIS_PORT, CACHE_THRESHOLD, CACHE_TTL
+import redis
+import logging
+
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
 # os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
@@ -31,6 +36,21 @@ class NewsService:
             )
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
+
+        # Initialize Semantic Cache
+        self.redis_client = None
+        self.semantic_cache = None
+        if REDIS_HOST:
+            try:
+                self.redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0, socket_timeout=2)
+                self.semantic_cache = SemanticCache(
+                    redis_client=self.redis_client,
+                    model=self.db.dense_model, # Using the dense model already in CybernewsDB
+                    threshold=CACHE_THRESHOLD,
+                    ttl=CACHE_TTL
+                )
+            except Exception as e:
+                logging.warning(f"Failed to initialize Redis: {e}")
 
     """
     Return news while checking if keyword has been specified or not
@@ -85,12 +105,22 @@ class NewsService:
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
+        # Semantic Cache Check
+        if self.semantic_cache:
+            cached_response = self.semantic_cache.get(str(messages))
+            if cached_response:
+                return cached_response
+
         # Create the LLMChain with the prompt and llm
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
         output = llm_chain.invoke(messages)
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
+
+        # Set Semantic Cache
+        if self.semantic_cache:
+            self.semantic_cache.set(str(messages), news_JSON)
   
         return news_JSON
 

@@ -17,3 +17,5 @@ google-api-python-client
 newsapi-python
 langchain-classic
 langchain-community
+redis
+numpy
