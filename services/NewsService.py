@@ -116,14 +116,18 @@ class NewsService:
     """
 
     def toJSON(self, data: str):
-        if len(data) == 0:
-            return {}
+        if not data or len(data.strip()) == 0:
+            return []
+        
         news_list = data.split("\n")
         news_list_json = []
-        news_list.pop(0)
+        
+        if len(news_list) > 0:
+            news_list.pop(0) # Removing the introductory text from LLM
+            
         for item in news_list:
             # Avoid dirty data
-            if len(item) == 0:
+            if len(item.strip()) == 0:
                 continue
             # Remove leading and trailing square brackets and split by comma and strip extra spaces
             data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
@@ -150,5 +154,7 @@ class NewsService:
             }
             news_list_json.append(news_item)
 
-        news_list_json.pop()
+        if news_list_json:
+            news_list_json.pop() # Removing the concluding text from LLM if any
+            
         return news_list_json
