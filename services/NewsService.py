@@ -1,5 +1,9 @@
 import os
 import json
+import hashlib
+import logging
+import re
+from typing import Optional
 from dotenv import dotenv_values
 from flask import jsonify
 from langchain_classic.chains import LLMChain
@@ -7,8 +11,10 @@ from langchain_classic.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
+from config.Database import get_redis_client
 env_vars = dotenv_values(".env")
 HUGGINGFACEHUB_API_TOKEN = env_vars.get("HUGGINGFACE_TOKEN")
+logger = logging.getLogger(__name__)
 # os.environ["HUGGINGFACEHUB_API_TOKEN"] = HUGGINGFACEHUB_API_TOKEN
 class NewsService:
     def __init__(self, model_name=None) -> None:
@@ -32,6 +38,57 @@ class NewsService:
         self.news_format = "[title, source, date(DD/MM/YYYY), news url];"
         self.news_number = 10
 
+    def _normalize_keyword(self, keyword: str) -> str:
+        """Normalize a keyword for deterministic cache key generation."""
+        if not keyword:
+            return "empty"
+        normalized = re.sub(r"[^a-z0-9\s]", "", keyword.lower().strip())
+        normalized = re.sub(r"\s+", " ", normalized)
+        return normalized
+
+    def _build_cache_key(
+        self, keyword: str, search_type: str = "hybrid", alpha: float = 0.5
+    ) -> str:
+        """Build a Redis cache key for query-level caching."""
+        normalized_keyword = self._normalize_keyword(keyword)
+        keyword_hash = hashlib.md5(normalized_keyword.encode()).hexdigest()[:12]
+        model_name = self.model_name if self.model_name else "none"
+        alpha_str = f"{alpha:.1f}".rstrip("0").rstrip(".")
+        return f"b0bot:news:{model_name}:{keyword_hash}:{search_type}:{alpha_str}"
+
+    def _get_from_cache(self, cache_key: str) -> Optional[list]:
+        """Get cached result from Redis and return None on miss or errors."""
+        try:
+            client = get_redis_client()
+            if client is None:
+                return None
+
+            cached_result = client.get(cache_key)
+            if cached_result:
+                logger.info(f"Cache HIT for key={cache_key}")
+                return json.loads(cached_result)
+            return None
+        except Exception as e:
+            logger.warning(
+                f"Redis cache GET failed for {cache_key}: {e}. Proceeding without cache."
+            )
+            return None
+
+    def _set_cache(self, cache_key: str, data: list) -> None:
+        """Store result in Redis cache with TTL and fail gracefully on errors."""
+        try:
+            client = get_redis_client()
+            if client is None or not data:
+                return
+
+            ttl = int(os.getenv("REDIS_TTL", "3600"))
+            client.setex(cache_key, ttl, json.dumps(data))
+            logger.info(f"Cached result for {cache_key} (TTL: {ttl}s)")
+        except Exception as e:
+            logger.warning(
+                f"Redis cache SET failed for {cache_key}: {e}. Result not cached."
+            )
+
     """
     Return news while checking if keyword has been specified or not
     """
@@ -40,6 +97,13 @@ class NewsService:
     # Fetch news data from db:
     # Only fetch data with valid `author` and `newsDate`
     # Drop field "id" from collection
+
+        cache_key = None
+        if llm and user_keywords:
+            cache_key = self._build_cache_key(user_keywords)
+            cached_result = self._get_from_cache(cache_key)
+            if cached_result is not None:
+                return cached_result
 
         if user_keywords:
             news_data = self.db.get_news_collections(is_keyword=True, keyword=user_keywords)
@@ -91,6 +155,9 @@ class NewsService:
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
+
+        if cache_key and news_JSON:
+            self._set_cache(cache_key, news_JSON)
   
         return news_JSON
 
