@@ -116,24 +116,29 @@ class NewsService:
     """
 
     def toJSON(self, data: str):
-        if len(data) == 0:
-            return {}
+        if not data or len(data.strip()) == 0:
+            return []
+
         news_list = data.split("\n")
         news_list_json = []
-        news_list.pop(0)
+
+        if len(news_list) > 0:
+            news_list.pop(0)
+
         for item in news_list:
             # Avoid dirty data
-            if len(item) == 0:
+            if len(item.strip()) == 0:
                 continue
+
+            # Skip non-list lines (for example explanatory intro/footer text)
+            stripped_item = item.strip()
+            if not (stripped_item.startswith('[') and stripped_item.endswith(']')):
+                continue
+
             # Remove leading and trailing square brackets and split by comma and strip extra spaces
             data_list = [item.strip().strip('"') for item in item.strip('[').strip(']').split(',')]
             data_list = [val.strip() for val in data_list]
 
-            for i in data_list:
-                print(i)
-                print("----")
-                
-            print(data_list)
             # Assign default values for missing elements
             start_index = data_list[0].find('[') if len(data_list) > 0 else -1
             end_index = data_list[3].find(']') if len(data_list) > 3 else -1
@@ -150,5 +155,4 @@ class NewsService:
             }
             news_list_json.append(news_item)
 
-        news_list_json.pop()
         return news_list_json
