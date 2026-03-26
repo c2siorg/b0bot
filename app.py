@@ -1,13 +1,16 @@
 from dotenv import load_dotenv
-from flask import *
-from langchain_classic.prompts import PromptTemplate
+from flask import Flask
 from routes.NewsRoutes import routes
+from config.Database import init_redis
 
 # Load environment variables
 load_dotenv()
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
+
+# Initialize optional Redis cache client
+init_redis()
 
 # Register routes
 app.register_blueprint(routes)
