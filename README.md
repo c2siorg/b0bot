@@ -96,6 +96,13 @@ Or, run `./db_update/Update.py` manually in local.
 **Layer 2 — Opt-in API Connectors:** Supports YouTube Data API v3 and NewsAPI.org for richer coverage. Both use free tiers and silently skip if keys are absent. See [`.env.example`](.env.example) for setup.
 
 
+## Troubleshooting
+
+If the application fails to start or you receive a 500 Internal Server Error, please check the following:
+- **Missing Environment Variables**: Ensure that you have copied `.env.example` to `.env`. The app will explicitly fail to start if `PINECONE_API_KEY`, `PINECONE_INDEX_NAME`, or `HUGGINGFACE_TOKEN`/`HF_TOKEN` are missing.
+- **Invalid API Keys**: If the app starts but API requests fail, verify that your Pinecone and HuggingFace tokens are valid and have the correct permissions.
+- **Dependency Issues**: If you see `ModuleNotFoundError`, ensure you have installed all dependencies using `pip install -r requirements.txt`.
+
 ## High-Level Architecture Diagram
 
 Our API lives inside a Flask API and is powered by LangChain and a Huggingface endpoint. 
