@@ -46,7 +46,7 @@ def update_database(overwrite=(len(sys.argv) > 1 and sys.argv[1] == '--overwrite
 
     # Connect to the index
     index = pc.Index(index_name)
-    namespace = "c2si"
+    namespace = os.getenv("PINECONE_NAMESPACE", "c2si")
     from sentence_transformers import SentenceTransformer, SparseEncoder
     import numpy as np
     

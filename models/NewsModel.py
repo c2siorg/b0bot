@@ -1,12 +1,13 @@
 from config.Database import client
 from datetime import datetime
+import os
 
 class CybernewsDB:
     def __init__(self):
         from sentence_transformers import SentenceTransformer, SparseEncoder
         self.client = client
-        self.index_name = "cybernews-hybrid-test-2"
-        self.namespace = "c2si" 
+        self.index_name = os.getenv("PINECONE_INDEX_NAME", "cybernews-index")
+        self.namespace = os.getenv("PINECONE_NAMESPACE", "c2si")
         self.index = self.client.Index(self.index_name)
         
         # Initialize native local embedding models
