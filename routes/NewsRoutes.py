@@ -1,7 +1,41 @@
 from flask import *
 from controllers.NewsController import NewsController
 routes = Blueprint("routes", __name__)
-# news_controller = NewsController("mistralai") # default model name
+
+MAX_KEYWORD_LENGTH = 200
+
+
+def _validate_keyword(raw_list):
+    """
+    Validates the ?keywords= query parameter.
+
+    Returns (keyword, error_response):
+      - On success: (stripped_keyword, None)
+      - On failure: (None, (json_response, status_code))
+
+    Checks performed:
+      1. Parameter must be present.
+      2. Value must be non-empty after stripping whitespace.
+      3. Value must not exceed MAX_KEYWORD_LENGTH characters.
+    """
+    if not raw_list:
+        return None, (jsonify({"error": "Missing required query parameter: keywords"}), 400)
+
+    keyword = raw_list[0].strip()
+
+    if not keyword:
+        return None, (jsonify({"error": "keywords parameter cannot be empty"}), 400)
+
+    if len(keyword) > MAX_KEYWORD_LENGTH:
+        return None, (
+            jsonify({
+                "error": f"keywords parameter exceeds maximum length of {MAX_KEYWORD_LENGTH} characters"
+            }),
+            400,
+        )
+
+    return keyword, None
+
 
 """
 home page route
@@ -37,11 +71,13 @@ return news based on certain keywords
 """
 @routes.route("/<llm_name>/news_keywords", methods=["GET"])
 def getNewsWithKeywords_route(llm_name):
-    # get list of keywords as argument from User's request
+    keyword, err = _validate_keyword(request.args.getlist("keywords"))
+    if err:
+        return err
+
     g.news_controller = NewsController(llm_name)
-    user_keywords = request.args.getlist("keywords")
-    data = g.news_controller.getNewsWithKeywords(user_keywords[0])
-    return render_template("news_key.html", data=data, keyword=user_keywords[0])
+    data = g.news_controller.getNewsWithKeywords(keyword)
+    return render_template("news_key.html", data=data, keyword=keyword)
 
 
 """
@@ -60,11 +96,14 @@ return news based on certain keywords (NO LLM)
 """
 @routes.route("/raw/news_keywords", methods=["GET"])
 def getNewsWithKeywords_raw_route():
+    keyword, err = _validate_keyword(request.args.getlist("keywords"))
+    if err:
+        return err
+
     # Instantiate without a model to bypass LLM initialization entirely
     g.news_controller = NewsController(None)
-    user_keywords = request.args.getlist("keywords")
-    data = g.news_controller.getNewsWithKeywords(user_keywords[0])
-    return render_template("news_key.html", data=data, keyword=user_keywords[0], llm_name="raw")
+    data = g.news_controller.getNewsWithKeywords(keyword)
+    return render_template("news_key.html", data=data, keyword=keyword, llm_name="raw")
 
 
 """
