@@ -1,5 +1,6 @@
 import sys
 import os
+import hashlib
 from dotenv import dotenv_values
 from pinecone import Pinecone, ServerlessSpec
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -100,9 +101,13 @@ def update_database(overwrite=(len(sys.argv) > 1 and sys.argv[1] == '--overwrite
                 values = [float(emb_array[i]) for i in indices]
                 sparse_vector = {"indices": indices, "values": values}
 
+                # Use a URL-based hash as the Pinecone vector ID.
+                # guaranteed unique per article since URLs are already deduplicated.
+                vector_id = hashlib.md5(url.encode()).hexdigest()
+
                 # Construct record exactly as per Pinecone documentation
                 record = {
-                    "id": str(article.get("id", "")),
+                    "id": vector_id,
                     "values": dense_vector,
                     "sparse_values": sparse_vector,
                     "metadata": {
