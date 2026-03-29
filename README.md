@@ -80,7 +80,7 @@ Or, run `./db_update/Update.py` manually in local.
 /<llm-name>/news
 /<llm-name>/news_keywords?keywords=[Place news keywords here]
 
-# Bypass LLM mapping forraw hybrid search results
+# Bypass LLM mapping for raw hybrid search results
 /raw/news
 /raw/news_keywords?keywords=[Place news keywords here]
 ```
@@ -107,7 +107,7 @@ In addition, to keep the knowledge base of news up to date, a scheduled script w
 ![Knowledge Base](assets/db_arch.png)
 
 
-The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
+The API will continually run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successful operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
 
 ## Licensing
 
