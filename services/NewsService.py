@@ -2,8 +2,8 @@ import os
 import json
 from dotenv import dotenv_values
 from flask import jsonify
-from langchain_classic.chains import LLMChain
-from langchain_classic.prompts import PromptTemplate
+from langchain.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
