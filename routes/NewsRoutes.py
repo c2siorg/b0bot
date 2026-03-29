@@ -37,9 +37,11 @@ return news based on certain keywords
 """
 @routes.route("/<llm_name>/news_keywords", methods=["GET"])
 def getNewsWithKeywords_route(llm_name):
-    # get list of keywords as argument from User's request
     g.news_controller = NewsController(llm_name)
     user_keywords = request.args.getlist("keywords")
+    if not user_keywords or not user_keywords[0]:
+        return jsonify({"error": "Missing keywords parameter"}), 400
+        
     data = g.news_controller.getNewsWithKeywords(user_keywords[0])
     return render_template("news_key.html", data=data, keyword=user_keywords[0])
 
@@ -63,6 +65,9 @@ def getNewsWithKeywords_raw_route():
     # Instantiate without a model to bypass LLM initialization entirely
     g.news_controller = NewsController(None)
     user_keywords = request.args.getlist("keywords")
+    if not user_keywords or not user_keywords[0]:
+        return jsonify({"error": "Missing keywords parameter"}), 400
+        
     data = g.news_controller.getNewsWithKeywords(user_keywords[0])
     return render_template("news_key.html", data=data, keyword=user_keywords[0], llm_name="raw")
 
@@ -72,4 +77,7 @@ deal requests with wrong route
 """
 @routes.errorhandler(404)
 def notFound_route(error):
-    g.news_controller.notFound(error)
+    # Ensure g.news_controller exists before trying to call it
+    if hasattr(g, 'news_controller'):
+        return g.news_controller.notFound(error)
+    return jsonify({"error": "Resource not found"}), 404
