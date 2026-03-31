@@ -100,7 +100,7 @@ Or, run `./db_update/Update.py` manually in local.
 
 Our API lives inside a Flask API and is powered by LangChain and a Huggingface endpoint. 
 
-In addition, to keep the knowledge base of news up to date, a scheduled script will be executed on a regular interval to retrieve the most recent cybersecurity news by scraping a list of target news websites and store them into the MongoDB Atlas Database. Everytime a user requests the API, news in the database will be read into LangChain's memory and fed to the LLM. Then, answers will be generated based on both the selected LLM and our knowledge base.
+In addition, to keep the knowledge base of news up to date, a scheduled script will be executed on a regular interval to retrieve the most recent cybersecurity news by scraping a list of target news websites and store them into the MongoDB Atlas Database. Every time a user requests the API, news in the database will be read into LangChain's memory and fed to the LLM. Then, answers will be generated based on both the selected LLM and our knowledge base.
 
 ![Architecture](assets/arch.png)
 
