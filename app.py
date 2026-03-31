@@ -1,19 +1,26 @@
-from dotenv import load_dotenv
-from flask import *
-from langchain_classic.prompts import PromptTemplate
-from routes.NewsRoutes import routes
-from config.validator import validate_env, ConfigurationError
+import os
 import logging
+from dotenv import load_dotenv
+from config.validator import validate_env, ConfigurationError
+
+# Configure basic logging early to capture startup issues
+logging.basicConfig(level=logging.INFO)
 
 # Load environment variables
 load_dotenv()
 
-# Validate strictly required configurations
+# Validate configuration before importing heavy dependencies
 try:
     validate_env()
 except ConfigurationError as e:
     logging.critical(f"Startup configuration failed: {e}")
     raise SystemExit(1)
+
+# Third-party imports
+from flask import Flask, jsonify, Blueprint, render_template, g
+from langchain_classic.prompts import PromptTemplate
+# Local imports
+from routes.NewsRoutes import routes
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)

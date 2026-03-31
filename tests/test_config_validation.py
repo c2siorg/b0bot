@@ -12,12 +12,23 @@ from app import app
 
 def test_validate_env_missing_keys():
     # Clear environment variables to simulate missing keys
-    with patch.dict(os.environ, {}, clear=True), patch('config.validator.dotenv_values', return_value={}):
+    with patch.dict(os.environ, {}, clear=True), \
+         patch('config.validator.dotenv_values', return_value={}), \
+         patch('os.path.exists', return_value=True):
         with pytest.raises(ConfigurationError) as exc_info:
             validate_env()
         assert "Missing required environment variables" in str(exc_info.value)
         assert "PINECONE_API_KEY" in str(exc_info.value)
         assert "PINECONE_INDEX_NAME" in str(exc_info.value)
+        assert "Please ensure they are set in your environment or .env file." in str(exc_info.value)
+
+def test_validate_env_no_env_file():
+    # Simulate missing .env file and missing environment variables
+    with patch.dict(os.environ, {}, clear=True), \
+         patch('os.path.exists', return_value=False):
+        with pytest.raises(ConfigurationError) as exc_info:
+            validate_env()
+        assert "Note: .env file was not found." in str(exc_info.value)
 
 def test_validate_env_success():
     mock_env = {
@@ -25,7 +36,9 @@ def test_validate_env_success():
         "PINECONE_INDEX_NAME": "test_index",
         "HUGGINGFACE_TOKEN": "test_hf_token"
     }
-    with patch.dict(os.environ, mock_env, clear=True), patch('config.validator.dotenv_values', return_value={}):
+    with patch.dict(os.environ, mock_env, clear=True), \
+         patch('os.path.exists', return_value=True), \
+         patch('config.validator.dotenv_values', return_value={}):
         # Should not raise any exception
         validate_env()
 

@@ -23,6 +23,7 @@ All types of contributions are encouraged and valued. See the [Table of Contents
   - [Your First Code Contribution](#your-first-code-contribution)
   - [Improving The Documentation](#improving-the-documentation)
 - [Styleguides](#styleguides)
+  - [Python Styleguide](#python-styleguide)
   - [Commit Messages](#commit-messages)
 - [Join The Project Team](#join-the-project-team)
 
@@ -138,5 +139,38 @@ Enhancement suggestions are tracked as [GitHub issues](https://github.com/bug-ze
 <!-- You might want to create an issue template for enhancement suggestions that can be used as a guide and that defines the structure of the information to be included. If you do so, reference it here in the description. -->
 
 <!-- omit in toc -->
+## Styleguides
+
+### Python Styleguide
+- Follow [PEP 8](https://pep8.org/) for Python code.
+- Use meaningful variable names and include docstrings for all public functions and classes.
+- Use Type Hints where appropriate to improve code readability and maintainability.
+- Keep functions small and focused on a single responsibility.
+
+### Commit Messages
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for our commit messages:
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation only changes
+- `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc)
+- `refactor`: A code change that neither fixes a bug nor adds a feature
+- `test`: Adding missing tests or correcting existing tests
+- `chore`: Changes to the build process or auxiliary tools and libraries
+
+#### AI Attribution
+As per our [AI Policy](#ai-policy), any commit containing AI-assisted or AI-generated content must include the appropriate footer:
+- **Assisted-By:** [AI Name] (for small fragments or suggestions)
+- **Generated-By:** [AI Name] (for substantial code artifacts)
+
+Example:
+```text
+feat: add environment variable validation
+
+This commit adds a robust validation check for required environment variables
+on startup to prevent runtime errors.
+
+Generated-By: Antigravity
+```
+
 ## Attribution
 This guide is based on the **contributing-gen**. [Make your own](https://github.com/bttger/contributing-gen)!

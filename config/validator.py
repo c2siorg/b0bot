@@ -7,8 +7,14 @@ class ConfigurationError(Exception):
 
 def validate_env():
     """Validates that all strictly required environment variables are present."""
-    # First check os.environ, then fallback to .env file
-    env_vars = {**dotenv_values(".env"), **os.environ}
+    # Priority: os.environ, then fallback to .env file
+    # We collect all available vars to check existence
+    env_file_path = ".env"
+    env_file_exists = os.path.exists(env_file_path)
+    
+    # Load .env values for a complete picture, but os.environ takes precedence
+    file_vars = dotenv_values(env_file_path) if env_file_exists else {}
+    env_vars = {**file_vars, **os.environ}
     
     required_keys = [
         "PINECONE_API_KEY",
@@ -26,7 +32,11 @@ def validate_env():
         missing_keys.append("HUGGINGFACE_TOKEN or HF_TOKEN")
         
     if missing_keys:
-        raise ConfigurationError(
+        error_msg = (
             f"Missing required environment variables: {', '.join(missing_keys)}. "
-            "Please check your .env file."
+            "Please ensure they are set in your environment or .env file."
         )
+        if not env_file_exists:
+            error_msg += f" Note: {env_file_path} file was not found."
+            
+        raise ConfigurationError(error_msg)
