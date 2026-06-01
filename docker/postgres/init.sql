@@ -1,4 +1,3 @@
--- B0Bot PostgreSQL schema (GSoC 2026)
 -- Applied automatically on first Postgres container start.
 
 CREATE EXTENSION IF NOT EXISTS vector;
