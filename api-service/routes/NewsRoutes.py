@@ -108,4 +108,4 @@ subscribe stub route
 """
 @routes.route("/subscribe", methods=["POST"])
 def subscribe_route():
-    return jsonify({"message": "subscription endpoint — coming soon"}), 200
+    return jsonify({"message": "subscription endpoint - coming soon"}), 200
