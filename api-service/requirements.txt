@@ -13,4 +13,6 @@ feedparser
 google-api-python-client
 newsapi-python
 redis
+psycopg[binary]
+pgvector
 gunicorn
