@@ -4,7 +4,6 @@ langchain-classic
 langchain-community
 langgraph
 huggingface_hub
-sentence-transformers
 beautifulsoup4
 lxml
 httpx
