@@ -1,0 +1,73 @@
+# Local development stack for B0Bot.
+# Brings up shared infrastructure (Postgres + pgvector, Redis) and the three
+# services with a single `docker compose up`. No cloud dependencies.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-b0bot}
+      POSTGRES_USER: ${POSTGRES_USER:-b0bot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-b0bot}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-b0bot} -d ${POSTGRES_DB:-b0bot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api-service:
+    build: ./api-service
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
+      REDIS_URL: redis://redis:6379/0
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  ingestion-service:
+    build: ./ingestion-service
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:
