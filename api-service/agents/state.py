@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, List
+from typing import TypedDict, Optional, List, Any
 
 class PlannerState(TypedDict):
     user_input: str
@@ -9,3 +9,4 @@ class PlannerState(TypedDict):
     session_id: Optional[str]
     chat_history: Optional[List[dict]]
     notification_triggered: bool
+    analysis: Optional[Any]
