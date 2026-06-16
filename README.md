@@ -109,6 +109,32 @@ In addition, to keep the knowledge base of news up to date, a scheduled script w
 
 The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
 
+## LangGraph Agent Pipeline
+
+The api-service runs every `/chat` request through a LangGraph pipeline of agents, each reading and updating a shared state object:
+
+1. **PlannerAgent** - classifies intent (search, analyze, subscribe) and extracts keywords from the user message
+2. **ScraperAgent** - queries PostgreSQL for matching articles, falling back to recent articles if no keyword match is found
+3. **AnalyzerAgent** - computes keyword frequency, trending topics, and sentiment (positive/negative/neutral) across the retrieved articles
+4. **ResponderAgent** - checks Redis for a cached response first (5 minute TTL), otherwise builds the JSON response and caches it
+
+### Example /chat response
+
+```json
+{
+  "message": "Found 2 articles.",
+  "articles": [...],
+  "chat_history": [],
+  "analysis": {
+    "keyword_frequency": [["ransomware", 2], ["critical", 2]],
+    "trending_topics": ["ransomware", "critical"],
+    "sentiment": "negative",
+    "positive_signals": [],
+    "negative_signals": ["ransomware", "critical", "vulnerability"]
+  }
+}
+```
+
 ## Licensing
 
 The MIT License 2023
