@@ -117,6 +117,7 @@ The api-service runs every `/chat` request through a LangGraph pipeline of agent
 2. **ScraperAgent** - queries PostgreSQL for matching articles, falling back to recent articles if no keyword match is found
 3. **AnalyzerAgent** - computes keyword frequency, trending topics, and sentiment (positive/negative/neutral) across the retrieved articles
 4. **ResponderAgent** - checks Redis for a cached response first (5 minute TTL), otherwise builds the JSON response and caches it
+5. **NotificationAgent** - triggered when intent is subscribe; extracts email and frequency from the user message, pushes an article.digest job to Redis for the notification-service to consume
 
 ### Example /chat response
 
@@ -134,6 +135,9 @@ The api-service runs every `/chat` request through a LangGraph pipeline of agent
   }
 }
 ```
+### Multi-turn Session Memory
+
+Every `/chat` request accepts a `session_id`. Chat history for that session is stored in Redis with a 1 hour TTL and capped at 10 messages. Each request loads the history from Redis before invoking the pipeline and saves the updated history after, so follow-up questions have context from previous turns.
 
 ## Licensing
 
