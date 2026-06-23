@@ -18,7 +18,6 @@ def _cache_key(user_input: str, intent: str) -> str:
 
 def responder_agent(state: PlannerState) -> PlannerState:
     articles = state.get("retrieved_articles", [])
-    chat_history = state.get("chat_history", [])
     analysis = state.get("analysis", None)
     user_input = state.get("user_input", "")
     intent = state.get("intent", "search")
@@ -39,7 +38,6 @@ def responder_agent(state: PlannerState) -> PlannerState:
         response = {
             "message": f"Found {len(articles)} articles.",
             "articles": articles,
-            "chat_history": chat_history,
             "analysis": analysis,
         }
 
