@@ -1,16 +1,16 @@
 """Ingestion service entrypoint.
 
-Polls RSS feeds, deduplicates articles by URL hash, and enqueues
-``article.discovered`` jobs for the embedding worker to upsert into
-Postgres + pgvector.
-
-This is a scaffold. The polling, dedup, and embedding pipeline land in the
-ingestion weeks of the timeline. For now the service starts cleanly and idles,
-so it can be wired into the compose stack alongside Postgres and Redis.
+Consumes article.discovered jobs from the Redis BullMQ queue and writes
+them into Postgres. RSS polling and embedding land in later weeks.
 """
+import asyncio
 import logging
 import os
-import time
+import signal
+
+from bullmq import Worker
+
+from handler import handle_article_discovered
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,16 +18,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger("ingestion-service")
 
-POLL_INTERVAL_SECONDS = int(os.getenv("INGESTION_POLL_INTERVAL", "300"))
+QUEUE_NAME = os.getenv("ARTICLE_DISCOVERED_QUEUE", "article-discovered")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 
-def main() -> None:
-    logger.info("ingestion-service starting (poll interval: %ss)", POLL_INTERVAL_SECONDS)
-    logger.info("RSS polling + queue pipeline not implemented yet — idling")
-    while True:
-        # Real RSS poll -> dedup by url_hash -> enqueue article.discovered.
-        time.sleep(POLL_INTERVAL_SECONDS)
+async def process_job(job, job_token):
+    handle_article_discovered(job.data)
+
+
+async def main():
+    shutdown = asyncio.Event()
+
+    def handle_signal(sig, frame):
+        logger.info("shutting down")
+        shutdown.set()
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+
+    logger.info("listening on queue %s", QUEUE_NAME)
+    worker = Worker(QUEUE_NAME, process_job, {"connection": REDIS_URL})
+
+    await shutdown.wait()
+
+    logger.info("closing worker")
+    await worker.close()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

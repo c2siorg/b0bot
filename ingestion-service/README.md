@@ -7,15 +7,33 @@ service.
 
 ## Status
 
-Scaffold. The service starts and idles; the RSS poll, dedup, embedding, and
-`article.discovered` enqueue pipeline are implemented in later weeks.
+The worker consumes `article.discovered` jobs from a Redis BullMQ queue and
+inserts them into Postgres with `embedding_status=pending`. RSS polling and
+embedding are not implemented yet.
 
 ## Run
 
-Started as part of the root `docker-compose.yml`:
-
 ```bash
 docker compose up ingestion-service
+```
+
+## Test the queue
+
+```bash
+# publish a test job
+docker compose exec ingestion-service python scripts/publish_test_job.py
+
+# check worker logs
+docker compose logs ingestion-service
+
+# verify in postgres
+docker compose exec postgres psql -U b0bot -d b0bot \
+  -c "SELECT title, url_hash, embedding_status FROM articles;"
+docker compose exec postgres psql -U b0bot -d b0bot \
+  -c "SELECT * FROM processed_jobs;"
+
+# run publish again — same job should be skipped (idempotency)
+docker compose exec ingestion-service python scripts/publish_test_job.py
 ```
 
 ## Environment
@@ -23,5 +41,5 @@ docker compose up ingestion-service
 | Variable | Default | Purpose |
 |---|---|---|
 | `DATABASE_URL` | `postgresql://b0bot:b0bot@postgres:5432/b0bot` | Postgres connection |
-| `REDIS_URL` | `redis://redis:6379/0` | Queue / cache |
-| `INGESTION_POLL_INTERVAL` | `300` | Seconds between RSS polls |
+| `REDIS_URL` | `redis://redis:6379/0` | BullMQ queue |
+| `ARTICLE_DISCOVERED_QUEUE` | `article-discovered` | Queue name |
