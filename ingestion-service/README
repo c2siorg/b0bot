@@ -1,0 +1,94 @@
+# ingestion-service
+
+Polls cybersecurity RSS feeds, deduplicates articles by URL hash, embeds them,
+and upserts the results into Postgres + pgvector. Communicates with the rest of
+the system only through Postgres and the job queue — never by importing another
+service.
+
+## Status
+
+The service runs two concurrent tasks:
+
+1. **RSS poller** — fetches 6 curated cybersecurity RSS feeds every
+   `POLLING_INTERVAL_SECONDS` (default 900s / 15 min), normalizes URLs,
+   deduplicates by `url_hash` against `processed_jobs`, and enqueues
+   `article.discovered` jobs onto the Redis BullMQ queue.
+2. **BullMQ worker** — consumes `article.discovered` jobs, generates a
+   384-dim embedding (`sentence-transformers/all-MiniLM-L6-v2`) from the
+   article title + snippet, and upserts into the `articles` table with
+   pgvector (`ON CONFLICT DO UPDATE`).
+
+Embedding failures set `embedding_status=failed` so the row can be retried
+later. Feed timeouts and parse errors are logged and skipped — they never
+crash the worker.
+
+## Run
+
+```bash
+docker compose up ingestion-service
+```
+
+## How it works
+
+```
+RSS feeds → poller.py → article.discovered queue → worker.py → handler.py
+                                                              ↓
+                                          embeddings.py (all-MiniLM-L6-v2)
+                                                              ↓
+                                               db.py (pgvector upsert)
+```
+
+## Redis port configuration
+
+Redis runs on port **6379** inside the Docker network and is exposed to the
+host on **6380** (configurable via `REDIS_PORT`). This avoids conflicts with a
+locally-installed Redis instance.
+
+| Scenario | Connection string |
+|---|---|
+| Inside Docker (default in `worker.py`) | `redis://redis:6379/0` |
+| Local development (outside Docker) | `redis://localhost:6380/0` (set in `.env`) |
+
+The Python default in `worker.py` is `redis://redis:6379/0` because the service
+runs inside Docker. When running locally, set `REDIS_URL` in your `.env` to
+`redis://localhost:6380/0`.
+
+## Environment
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://b0bot:b0bot@postgres:5432/b0bot` | Postgres connection |
+| `REDIS_URL` | `redis://redis:6379/0` | BullMQ queue |
+| `ARTICLE_DISCOVERED_QUEUE` | `article-discovered` | Queue name |
+| `POLLING_INTERVAL_SECONDS` | `900` | RSS polling interval (15 min) |
+| `RSS_FEED_TIMEOUT` | `10` | Timeout per feed in seconds |
+| `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | HuggingFace embedding model |
+| `LOG_LEVEL` | `INFO` | Logging level |
+
+## Test the pipeline
+
+```bash
+# Start the stack
+docker compose up -d
+
+# Check worker logs (poller + consumer)
+docker compose logs -f ingestion-service
+
+# Verify articles in postgres
+docker compose exec postgres psql -U b0bot -d b0bot \
+  -c "SELECT title, url_hash, embedding_status FROM articles ORDER BY ingested_at DESC LIMIT 10;"
+
+# Verify idempotency markers
+docker compose exec postgres psql -U b0bot -d b0bot \
+  -c "SELECT * FROM processed_jobs ORDER BY processed_at DESC LIMIT 10;"
+
+# Check queue length in Redis
+redis-cli -p 6380 LLEN article-discovered
+
+# Hybrid vector search (cosine similarity)
+docker compose exec postgres psql -U b0bot -d b0bot \
+  -c "SELECT title, embedding <-> (SELECT embedding FROM articles WHERE embedding IS NOT NULL LIMIT 1) AS distance
+      FROM articles
+      WHERE embedding IS NOT NULL
+      ORDER BY distance
+      LIMIT 5;"

@@ -51,6 +51,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
       REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      POLLING_INTERVAL_SECONDS: ${POLLING_INTERVAL_SECONDS:-900}
+      RSS_FEED_TIMEOUT: ${RSS_FEED_TIMEOUT:-10}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
     depends_on:
       postgres:
         condition: service_healthy
