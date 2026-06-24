@@ -7,8 +7,8 @@ import redis
 routes = Blueprint("routes", __name__)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-SESSION_TTL = 3600  # 1 hour
-MAX_HISTORY = 10
+SESSION_TTL = int(os.getenv("SESSION_TTL", "3600"))
+MAX_HISTORY = int(os.getenv("MAX_HISTORY", "10"))
 
 try:
     session_store = redis.from_url(REDIS_URL, decode_responses=True)

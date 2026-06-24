@@ -22,6 +22,10 @@ def responder_agent(state: PlannerState) -> PlannerState:
     user_input = state.get("user_input", "")
     intent = state.get("intent", "search")
 
+    if intent == "subscribe":
+        response = {"message": "Subscribed successfully. You will receive digests based on your interests.", "articles": []}
+        return {**state, "llm_response": json.dumps(response)}
+
     cache_key = _cache_key(user_input, intent)
 
     if redis_client:
