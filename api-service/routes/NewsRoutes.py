@@ -104,6 +104,14 @@ health check route
 def health_route():
     return jsonify({"status": "ok"}), 200
 
+
+"""
+chat UI route
+"""
+@routes.route("/chat", methods=["GET"])
+def chat_ui_route():
+    return render_template("chat.html")
+
 """
 chat route - multi-turn dialogue via LangGraph agents
 """
