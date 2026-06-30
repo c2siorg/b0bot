@@ -2,4 +2,6 @@ python-dotenv==1.0.1
 bullmq==2.25.2
 redis==6.4.0
 psycopg[binary]==3.2.6
+pgvector==0.3.6
 feedparser==6.0.11
+sentence-transformers==3.3.1

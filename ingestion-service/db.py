@@ -5,9 +5,14 @@ from contextlib import contextmanager
 import psycopg
 from psycopg.rows import dict_row
 
+try:
+    from pgvector.psycopg import register_vector
+except ImportError:
+    register_vector = None
+
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://b0bot:b0bot@localhost:5432/b0bot",
+    "postgresql://b0bot:b0bot@postgres:5432/b0bot",
 )
 
 
@@ -15,6 +20,8 @@ DATABASE_URL = os.getenv(
 def get_connection():
     conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     try:
+        if register_vector is not None:
+            register_vector(conn)
         yield conn
     finally:
         conn.close()
@@ -41,23 +48,34 @@ def mark_processed(conn, idempotency_key: str, event_type: str) -> None:
         )
 
 
-def insert_article(conn, payload: dict) -> bool:
-    """Insert an article row. Returns True if a new row was inserted."""
+def upsert_article(conn, payload: dict, embedding=None, embedding_status: str = "pending") -> bool:
+    """Insert or update an article row.
+
+    If a row with the same ``url_hash`` already exists, the embedding and
+    embedding_status columns are updated (ON CONFLICT DO UPDATE). When an
+    embedding is provided, ``embedding_status`` should be ``"indexed"`` or
+    ``"failed"``.
+
+    Returns True if a new row was inserted (False means it was an update).
+    """
     with conn.cursor() as cur:
         cur.execute(
             """
             INSERT INTO articles (
                 url, url_hash, title, content, author,
                 source_name, feed_url, image_url, published_at,
-                embedding_status
+                embedding_status, embedding
             )
             VALUES (
                 %(url)s, %(url_hash)s, %(title)s, %(content)s, %(author)s,
                 %(source_name)s, %(feed_url)s, %(image_url)s, %(published_at)s,
-                'pending'
+                %(embedding_status)s, %(embedding)s
             )
-            ON CONFLICT (url_hash) DO NOTHING
-            RETURNING id
+            ON CONFLICT (url_hash) DO UPDATE SET
+                embedding = EXCLUDED.embedding,
+                embedding_status = EXCLUDED.embedding_status,
+                updated_at = NOW()
+            RETURNING (xmax = 0) AS inserted
             """,
             {
                 "url": payload["url"],
@@ -69,6 +87,9 @@ def insert_article(conn, payload: dict) -> bool:
                 "feed_url": payload.get("feed_url"),
                 "image_url": payload.get("image_url"),
                 "published_at": payload.get("published_at"),
+                "embedding_status": embedding_status,
+                "embedding": embedding,
             },
         )
-        return cur.fetchone() is not None
+        row = cur.fetchone()
+        return bool(row and row.get("inserted"))
