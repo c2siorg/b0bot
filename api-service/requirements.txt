@@ -15,3 +15,5 @@ redis
 psycopg[binary]
 pgvector
 gunicorn
+transformers
+torch
