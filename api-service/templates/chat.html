@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b0bot - Chat</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%);
+            color: #ffffff;
+        }
+
+        header {
+            padding: 16px 24px;
+            font-size: 1.5em;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+
+        #thread {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            background: rgba(255,255,255,0.15);
+            text-align: right;
+        }
+
+        .msg.bot {
+            align-self: flex-start;
+            background: rgba(0,0,0,0.25);
+        }
+
+        .msg.bot .label {
+            font-size: 0.75em;
+            opacity: 0.7;
+            margin-bottom: 6px;
+        }
+
+        .article {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .article a {
+            color: #90caf9;
+            text-decoration: none;
+        }
+
+        .article a:hover {
+            text-decoration: underline;
+        }
+
+        #input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.2);
+        }
+
+        #msg-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+            font-size: 1em;
+            font-family: Arial, sans-serif;
+            outline: none;
+        }
+
+        #msg-input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        #msg-input:focus {
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        #send-btn {
+            padding: 12px 24px;
+            background: #03a9f4;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #send-btn:hover {
+            background: #0288d1;
+        }
+
+        #send-btn:disabled {
+            background: rgba(255,255,255,0.2);
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            opacity: 0.5;
+            margin: auto;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+
+<body>
+    <header>b0bot / Chat</header>
+
+    <div id="thread">
+        <div class="empty-state" id="empty">Ask a question to get started.</div>
+    </div>
+
+    <div id="input-bar">
+        <input type="text" id="msg-input" placeholder="Ask a question to b0bot..." autocomplete="off" />
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        const sessionId = Math.random().toString(36).substring(2);
+        const thread = document.getElementById('thread');
+        const input = document.getElementById('msg-input');
+        const btn = document.getElementById('send-btn');
+        const empty = document.getElementById('empty');
+
+        function appendMessage(role, text) {
+            if (empty) empty.remove();
+            const div = document.createElement('div');
+            div.classList.add('msg', role);
+            div.textContent = text;
+            thread.appendChild(div);
+            thread.scrollTop = thread.scrollHeight;
+        }
+
+        function appendBotResponse(raw) {
+            if (empty) empty.remove();
+            const div = document.createElement('div');
+            div.classList.add('msg', 'bot');
+
+            let parsed;
+            try {
+                parsed = JSON.parse(raw);
+            } catch(e) {
+                div.textContent = raw;
+                thread.appendChild(div);
+                thread.scrollTop = thread.scrollHeight;
+                return;
+            }
+
+            const label = document.createElement('div');
+            label.classList.add('label');
+            label.textContent = 'b0bot';
+            div.appendChild(label);
+
+            const msg = document.createElement('div');
+            msg.textContent = parsed.message || '';
+            div.appendChild(msg);
+
+            if (parsed.articles && parsed.articles.length > 0) {
+                parsed.articles.forEach(function(a) {
+                    const art = document.createElement('div');
+                    art.classList.add('article');
+                    art.innerHTML = '<a href="' + a.url + '" target="_blank">' + a.title + '</a>' +
+                        '<div style="opacity:0.7;font-size:0.85em;margin-top:4px;">' + a.source + ' &middot; ' + a.date + '</div>';
+                    div.appendChild(art);
+                });
+            }
+
+            if (parsed.analysis) {
+                const analysis = document.createElement('div');
+                analysis.style.marginTop = '8px';
+                analysis.style.fontSize = '0.85em';
+                analysis.style.opacity = '0.8';
+                analysis.textContent = 'Sentiment: ' + parsed.analysis.sentiment +
+                    ' | Trending: ' + (parsed.analysis.trending_topics || []).slice(0, 3).join(', ');
+                div.appendChild(analysis);
+            }
+
+            thread.appendChild(div);
+            thread.scrollTop = thread.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            input.value = '';
+            btn.disabled = true;
+            appendMessage('user', text);
+
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, session_id: sessionId })
+                });
+                const data = await res.json();
+                appendBotResponse(data.response);
+            } catch(e) {
+                appendMessage('bot', 'something went wrong, try again.');
+            } finally {
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+
+        btn.addEventListener('click', sendMessage);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+
+</html>
