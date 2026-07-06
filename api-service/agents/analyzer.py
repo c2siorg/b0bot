@@ -13,7 +13,7 @@ try:
         truncation=True,
         max_length=128,
     )
-except Exception:
+except (ImportError, OSError, RuntimeError):
     sentiment_pipeline = None
 
 
