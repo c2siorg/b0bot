@@ -36,6 +36,33 @@ def test_parse_entry_missing_required_fields_returns_none():
     assert parsed is None
 
 
+def test_parse_entry_missing_title_returns_none():
+    feed = {"name": "Feed", "url": "https://feed.example"}
+    parsed = poller._parse_entry({"link": "https://example.com/a"}, feed)
+    assert parsed is None
+
+
+def test_parse_entry_missing_link_returns_none():
+    feed = {"name": "Feed", "url": "https://feed.example"}
+    parsed = poller._parse_entry({"title": "Headline"}, feed)
+    assert parsed is None
+
+
+def test_parse_entry_minimal_fields_uses_empty_optional_values():
+    feed = {"name": "SecurityWeek", "url": "https://feed.example"}
+    entry = {"title": "  Advisory  ", "link": "https://Example.COM/a?utm_source=x"}
+    parsed = poller._parse_entry(entry, feed)
+
+    assert parsed is not None
+    assert parsed["title"] == "Advisory"
+    assert parsed["url"] == "https://example.com/a"
+    assert parsed["content_snippet"] == ""
+    assert parsed["author"] == ""
+    assert parsed["published_at"] is None
+    assert parsed["image_url"] is None
+    assert parsed["source_name"] == "SecurityWeek"
+
+
 def test_build_job_structure():
     payload = {
         "title": "T",
@@ -57,6 +84,12 @@ def test_build_job_structure():
 def test_prepare_embedding_text():
     text = embeddings.prepare_embedding_text("Title", "Snippet")
     assert text == "Title Snippet"
+
+
+def test_prepare_embedding_text_missing_fields():
+    assert embeddings.prepare_embedding_text("", "") == ""
+    assert embeddings.prepare_embedding_text("Title only", "") == "Title only"
+    assert embeddings.prepare_embedding_text("", "Snippet only") == "Snippet only"
 
 
 @patch("embeddings._get_model", side_effect=Exception("boom"))
@@ -151,3 +184,94 @@ def test_article_discovered_embedding_failure_marks_failed(
     args, _kwargs = mock_upsert.call_args
     assert args[3] == "failed"
     mock_mark.assert_called_once()
+
+
+@patch("handler.mark_processed")
+@patch("handler.upsert_article", return_value=True)
+@patch("handler.generate_embedding", return_value=[0.1, 0.2])
+@patch("handler.prepare_embedding_text", return_value="")
+@patch("handler.is_processed", return_value=False)
+def test_article_discovered_missing_optional_fields_still_upserts(
+    _mock_is_processed,
+    mock_prepare,
+    _mock_generate,
+    mock_upsert,
+    mock_mark,
+    fake_conn_ctx,
+):
+    _conn, ctx = fake_conn_ctx
+    event = {
+        "event_type": "article.discovered",
+        "idempotency_key": "article:hash:discovered",
+        "payload": {
+            "title": "Minimal article",
+            "url": "https://example.com/minimal",
+            "url_hash": "hash",
+            "source_name": "Feed",
+        },
+    }
+
+    with patch("handler.get_connection", return_value=ctx):
+        handler.handle_article_discovered(event)
+
+    mock_prepare.assert_called_once_with("Minimal article", "")
+    mock_upsert.assert_called_once()
+    payload_arg = mock_upsert.call_args[0][1]
+    assert payload_arg["title"] == "Minimal article"
+    assert "author" not in payload_arg
+    mock_mark.assert_called_once()
+
+
+@patch("handler.mark_processed")
+@patch("handler.upsert_article", return_value=True)
+@patch("handler.generate_embedding", return_value=[0.1, 0.2])
+@patch("handler.prepare_embedding_text", return_value="")
+@patch("handler.is_processed", return_value=False)
+def test_article_discovered_empty_title_and_snippet_still_processes(
+    _mock_is_processed,
+    mock_prepare,
+    _mock_generate,
+    mock_upsert,
+    mock_mark,
+    fake_conn_ctx,
+):
+    _conn, ctx = fake_conn_ctx
+    event = {
+        "event_type": "article.discovered",
+        "idempotency_key": "article:empty:discovered",
+        "payload": {
+            "title": "",
+            "content_snippet": "",
+            "url": "https://example.com/empty",
+            "url_hash": "empty",
+            "source_name": "Feed",
+        },
+    }
+
+    with patch("handler.get_connection", return_value=ctx):
+        handler.handle_article_discovered(event)
+
+    mock_prepare.assert_called_once_with("", "")
+    mock_upsert.assert_called_once()
+    mock_mark.assert_called_once()
+
+
+@patch("handler.upsert_article")
+@patch("handler.is_processed", return_value=True)
+def test_article_discovered_skips_when_already_processed(
+    mock_is_processed,
+    mock_upsert,
+    fake_conn_ctx,
+):
+    _conn, ctx = fake_conn_ctx
+    event = {
+        "event_type": "article.discovered",
+        "idempotency_key": "article:hash:discovered",
+        "payload": {"title": "T", "url": "https://example.com", "url_hash": "hash", "source_name": "src"},
+    }
+
+    with patch("handler.get_connection", return_value=ctx):
+        handler.handle_article_discovered(event)
+
+    mock_is_processed.assert_called_once()
+    mock_upsert.assert_not_called()

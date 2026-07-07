@@ -67,3 +67,31 @@ def test_render_digest_email_empty():
     assert subject == "B0Bot weekly digest"
     assert "No new articles were published" in body
     assert "Browse all news" in html_body
+
+
+def test_render_digest_email_missing_article_fields_uses_defaults():
+    subject, body, html_body = render_digest_email([{}], "daily")
+
+    assert subject == "B0Bot daily digest"
+    assert "Untitled" in body
+    assert "Unknown Source" in body
+    assert "Untitled" in html_body
+    assert "Unknown source" in html_body
+    assert "Browse all news" in html_body
+
+
+def test_render_digest_email_missing_url_falls_back_to_frontend():
+    with patch.dict("os.environ", {"FRONTEND_URL": "https://b0bot.example"}, clear=False):
+        import importlib
+        import digest as digest_module
+
+        importlib.reload(digest_module)
+
+    _subject, body, html_body = digest_module.render_digest_email(
+        [{"title": "No link article", "source_name": "Feed"}],
+        "daily",
+    )
+
+    assert "https://b0bot.example" in body
+    assert "https://b0bot.example" in html_body
+    assert "news?url=" not in body
