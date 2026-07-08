@@ -66,6 +66,15 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
       REDIS_URL: redis://redis:6379/0
+      DIGEST_CHECK_INTERVAL: ${DIGEST_CHECK_INTERVAL:-3600}
+      MAX_DIGEST_ARTICLES: ${MAX_DIGEST_ARTICLES:-10}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5000}
     depends_on:
       postgres:
         condition: service_healthy
