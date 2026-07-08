@@ -192,11 +192,18 @@
             div.appendChild(msg);
 
             if (parsed.articles && parsed.articles.length > 0) {
+                const sentimentMap = {};
+                if (parsed.analysis && parsed.analysis.article_sentiments) {
+                    parsed.analysis.article_sentiments.forEach(function(s) {
+                        sentimentMap[s.title] = s.sentiment + ' (' + s.confidence + ')';
+                    });
+                }
                 parsed.articles.forEach(function(a) {
                     const art = document.createElement('div');
                     art.classList.add('article');
+                    const sentLabel = sentimentMap[a.title] ? ' &middot; ' + sentimentMap[a.title] : '';
                     art.innerHTML = '<a href="' + a.url + '" target="_blank">' + a.title + '</a>' +
-                        '<div style="opacity:0.7;font-size:0.85em;margin-top:4px;">' + a.source + ' &middot; ' + a.date + '</div>';
+                        '<div style="opacity:0.7;font-size:0.85em;margin-top:4px;">' + a.source + ' &middot; ' + a.date + sentLabel + '</div>';
                     div.appendChild(art);
                 });
             }
