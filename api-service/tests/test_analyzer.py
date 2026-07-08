@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 
 
@@ -27,11 +26,11 @@ SAMPLE_ARTICLES = [
         "body": "A ransomware attack encrypted patient records.",
     },
     {
-        "title": "Apache patch released",
+        "title": "New malware strain bypasses antivirus detection",
         "source": "The Hacker News",
         "date": "01/01/2026",
         "url": "https://example.com/2",
-        "body": "Apache released a patch fixing a critical RCE vulnerability.",
+        "body": "A new malware strain is actively exploiting vulnerabilities in enterprise systems.",
     },
 ]
 
@@ -50,27 +49,31 @@ class TestAnalyzerAgent:
         assert "keyword_frequency" in result["analysis"]
         assert "trending_topics" in result["analysis"]
         assert "sentiment" in result["analysis"]
-        assert "positive_signals" in result["analysis"]
-        assert "negative_signals" in result["analysis"]
+        assert "sentiment_confidence" in result["analysis"]
+        assert "article_sentiments" in result["analysis"]
 
-    # sentiment logic is keyword-based for now; these tests will be updated when DistilBERT lands
-    def test_negative_sentiment(self):
+    def test_article_sentiments_per_article(self):
         from agents.analyzer import analyzer_agent
-        articles = [{"title": "ransomware vulnerability exploit breach", "body": "malware attack compromised exposed leaked"}]
+        state = make_state(retrieved_articles=SAMPLE_ARTICLES)
+        result = analyzer_agent(state)
+        assert len(result["analysis"]["article_sentiments"]) == 2
+        for item in result["analysis"]["article_sentiments"]:
+            assert "title" in item
+            assert "sentiment" in item
+            assert "confidence" in item
+            assert item["sentiment"] in ("positive", "negative", "neutral")
+
+    def test_negative_sentiment_on_ransomware(self):
+        from agents.analyzer import analyzer_agent
+        articles = [{"title": "ransomware campaign targets healthcare providers encrypting patient records", "body": "hospitals hit by ransomware attack demanding payment"}]
         state = make_state(retrieved_articles=articles)
         result = analyzer_agent(state)
         assert result["analysis"]["sentiment"] == "negative"
 
-    def test_positive_sentiment(self):
+    def test_pipeline_none_falls_back_to_neutral(self, mocker):
+        import agents.analyzer as analyzer_module
+        mocker.patch.object(analyzer_module, "sentiment_pipeline", None)
         from agents.analyzer import analyzer_agent
-        articles = [{"title": "patched fixed resolved mitigated secured", "body": "updated protected systems"}]
-        state = make_state(retrieved_articles=articles)
-        result = analyzer_agent(state)
-        assert result["analysis"]["sentiment"] == "positive"
-
-    def test_neutral_sentiment_when_equal_signals(self):
-        from agents.analyzer import analyzer_agent
-        articles = [{"title": "ransomware patched", "body": "vulnerability fixed"}]
-        state = make_state(retrieved_articles=articles)
+        state = make_state(retrieved_articles=SAMPLE_ARTICLES)
         result = analyzer_agent(state)
         assert result["analysis"]["sentiment"] == "neutral"
