@@ -1,16 +1,18 @@
 import sys
 import os
-from dotenv import dotenv_values
+from dotenv import load_dotenv
 from pinecone import Pinecone, ServerlessSpec
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+load_dotenv()
+
 from cybernews.CyberNews import CyberNews
 
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
+PINECONE_API = os.getenv("PINECONE_API_KEY")
 
 # Configure client
 pc = Pinecone(api_key=PINECONE_API)
-index_name = str.lower(dotenv_values(".env").get("PINECONE_INDEX_NAME")) # pinecone index name must be in lowercase
+index_name = os.getenv("PINECONE_INDEX_NAME").lower() 
 
 
 
