@@ -6,27 +6,26 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from cybernews.CyberNews import CyberNews
 
-PINECONE_API = dotenv_values(".env").get("PINECONE_API_KEY")
-
-# Configure client
-pc = Pinecone(api_key=PINECONE_API)
-index_name = str.lower(dotenv_values(".env").get("PINECONE_INDEX_NAME")) # pinecone index name must be in lowercase
-
-
-
-
-# Different types of news
-news = CyberNews()
-newsBox = dict()
-newsBox["general_news"] = news.get_news("general")
-newsBox["cyber_attack_news"] = news.get_news("cyberAttack")
-newsBox["vulnerability_news"] = news.get_news("vulnerability")
-newsBox["malware_news"] = news.get_news("malware")
-newsBox["security_news"] = news.get_news("security")
-newsBox["data_breach_news"] = news.get_news("dataBreach")   
-
 # Convert news articles to vectors and upsert into Pinecone
 def update_database(overwrite=(len(sys.argv) > 1 and sys.argv[1] == '--overwrite')):
+    env = dotenv_values(".env")
+    PINECONE_API = env.get("PINECONE_API_KEY")
+    index_name = str.lower(env.get("PINECONE_INDEX_NAME"))  # pinecone index name must be in lowercase
+
+    # Configure client
+    pc = Pinecone(api_key=PINECONE_API)
+
+    # Collect news from all categories
+    news = CyberNews()
+    newsBox = {
+        "general_news":      news.get_news("general"),
+        "cyber_attack_news": news.get_news("cyberAttack"),
+        "vulnerability_news":news.get_news("vulnerability"),
+        "malware_news":      news.get_news("malware"),
+        "security_news":     news.get_news("security"),
+        "data_breach_news":  news.get_news("dataBreach"),
+    }
+
     # Delete the index if overwrite is requested
     if overwrite and index_name in pc.list_indexes().names():
         pc.delete_index(index_name)
