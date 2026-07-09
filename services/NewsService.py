@@ -150,5 +150,6 @@ class NewsService:
             }
             news_list_json.append(news_item)
 
-        news_list_json.pop()
+        if news_list_json:
+            news_list_json.pop()
         return news_list_json
