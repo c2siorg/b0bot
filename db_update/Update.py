@@ -32,8 +32,11 @@ def update_database(overwrite=(len(sys.argv) > 1 and sys.argv[1] == '--overwrite
         pc.delete_index(index_name)
         print(f"Deleted existing index: {index_name}")
 
+    # Refresh index list before create check (could have been deleted in previous step)
+    existing_indexes = pc.list_indexes().names()
+
     # Create the hybrid index (metric='dotproduct' is recommended for hybrid)
-    if index_name not in pc.list_indexes().names():
+    if index_name not in existing_indexes:
         pc.create_index(
             name=index_name, 
             dimension=384, 
