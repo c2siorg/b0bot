@@ -16,3 +16,5 @@ redis==8.0.1
 psycopg[binary]==3.3.4
 pgvector==0.4.2
 gunicorn==26.0.0
+transformers==5.12.1
+torch==2.12.1
