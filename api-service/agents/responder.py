@@ -23,7 +23,8 @@ def responder_agent(state: PlannerState) -> PlannerState:
     intent = state.get("intent", "search")
 
     if intent == "subscribe":
-        response = {"message": "Subscribed successfully. You will receive digests based on your interests.", "articles": []}
+        message = state.get("notification_message") or "Subscribed successfully."
+        response = {"message": message, "articles": []}
         return {**state, "llm_response": json.dumps(response)}
 
     cache_key = _cache_key(user_input, intent)

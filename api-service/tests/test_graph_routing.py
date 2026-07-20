@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock
 
 
@@ -29,12 +28,14 @@ class TestGraphRouting:
         from agents import responder as responder_module
         mock_db = MagicMock()
         mocker.patch.object(scraper_module, "db", mock_db)
+        mock_subscriber_db = MagicMock()
+        mock_subscriber_db.create_subscriber.return_value = True
+        mocker.patch.object(notification_module, "db", mock_subscriber_db)
         mock_redis = MagicMock()
-        mocker.patch.object(notification_module, "redis_client", mock_redis)
         mocker.patch.object(responder_module, "redis_client", mock_redis)
         from agents import agent_graph
         result = agent_graph.invoke({
-            "user_input": "subscribe vishak@example.com daily",
+            "user_input": "subscribe vishak@example.com daily to ransomware alerts",
             "session_id": "test",
             "chat_history": [],
             "notification_triggered": False,
