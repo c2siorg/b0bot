@@ -136,7 +136,7 @@ def chat_route():
 
     response = result["llm_response"]
 
-    history.append({"role": "user", "content": user_input})
+    history.append({"role": "user", "content": user_input, "intent": result.get("intent")})
     history.append({"role": "assistant", "content": response})
     _save_history(session_id, history[-MAX_HISTORY:])
 
