@@ -87,7 +87,12 @@ class NewsService:
 
         # Create the LLMChain with the prompt and llm
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output = llm_chain.invoke(messages)
+
+
+        try:
+            output = llm_chain.invoke(messages)
+        except Exception as e:
+            return {"error": "LLM processing failed", "details": str(e)}
 
         # Convert news data into JSON format
         news_JSON = self.toJSON(output['text'])
