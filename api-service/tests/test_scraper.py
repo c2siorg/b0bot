@@ -27,7 +27,9 @@ class TestScraperAgent:
         from agents.scraper import scraper_agent
         state = make_state(intent="search", keywords=["ransomware", "attack"])
         scraper_agent(state)
-        mock_db.get_news_collections.assert_called_once_with(is_keyword=True, keyword="ransomware attack")
+        mock_db.get_news_collections.assert_called_once_with(
+            is_keyword=True, keyword="ransomware attack", search_type="hybrid", query_vector=None
+        )
 
     def test_generic_terms_filtered_out(self, mocker):
         from agents import scraper as scraper_module
@@ -37,7 +39,9 @@ class TestScraperAgent:
         from agents.scraper import scraper_agent
         state = make_state(intent="search", keywords=["cybersecurity", "news", "ransomware"])
         scraper_agent(state)
-        mock_db.get_news_collections.assert_called_once_with(is_keyword=True, keyword="ransomware")
+        mock_db.get_news_collections.assert_called_once_with(
+            is_keyword=True, keyword="ransomware", search_type="hybrid", query_vector=None
+        )
 
     def test_falls_back_when_all_keywords_are_generic(self, mocker):
         from agents import scraper as scraper_module
@@ -69,3 +73,17 @@ class TestScraperAgent:
         state = make_state(intent="search", keywords=["ransomware"])
         result = scraper_agent(state)
         assert result["retrieved_articles"][0] == {"title": "Test", "source": "Src", "date": "01/01/2026", "url": "http://x.com", "body": "body text"}
+
+    def test_query_embedded_and_passed_to_hybrid_search(self, mocker):
+        from agents import scraper as scraper_module
+        mock_db = MagicMock()
+        mock_db.get_news_collections.return_value = [{"headlines": "t", "author": "x", "newsDate": "01/01/2026", "newsURL": "http://x.com", "fullNews": ""}]
+        mocker.patch.object(scraper_module, "db", mock_db)
+        mock_vector = [0.1] * 384
+        mocker.patch.object(scraper_module, "generate_embedding", return_value=mock_vector)
+        from agents.scraper import scraper_agent
+        state = make_state(intent="search", keywords=["ransomware", "attack"], user_input="latest ransomware attack news")
+        scraper_agent(state)
+        mock_db.get_news_collections.assert_called_once_with(
+            is_keyword=True, keyword="ransomware attack", search_type="hybrid", query_vector=mock_vector
+        )

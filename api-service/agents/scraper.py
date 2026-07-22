@@ -1,5 +1,6 @@
 from agents.state import PlannerState
 from models.NewsModel import CybernewsDB
+from services.embeddings import generate_embedding
 
 db = CybernewsDB()
 
@@ -9,13 +10,20 @@ GENERIC_TERMS = {"cybersecurity", "news", "security", "latest", "cyber", "articl
 def scraper_agent(state: PlannerState) -> PlannerState:
     keywords = state.get("keywords", [])
     intent = state.get("intent", "search")
+    user_input = state.get("user_input", "")
 
     # Filter out generic terms to get meaningful keywords
     meaningful_keywords = [k for k in keywords if k.lower() not in GENERIC_TERMS]
 
     if meaningful_keywords and intent == "search":
         keyword_str = " ".join(meaningful_keywords)
-        articles = db.get_news_collections(is_keyword=True, keyword=keyword_str)
+        query_vector = generate_embedding(user_input)
+        articles = db.get_news_collections(
+            is_keyword=True,
+            keyword=keyword_str,
+            search_type="hybrid",
+            query_vector=query_vector or None,
+        )
         # Fall back to all articles if keyword search returns nothing
         if not articles:
             articles = db.get_news_collections()
