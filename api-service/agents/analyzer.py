@@ -1,9 +1,20 @@
+import re
 from collections import Counter
+
+from bs4 import BeautifulSoup
 
 from agents.state import PlannerState
 
 SENTIMENT_MODEL = "distilbert-base-uncased-finetuned-sst-2-english"
 NEUTRAL_THRESHOLD = 0.55
+
+# WordPress-style RSS feeds append a syndication credit line to the article
+# body, not real content, just noise in keyword frequency and sentiment
+# input. Covers the common phrasings we've actually seen across sources.
+SYNDICATION_PATTERNS = [
+    re.compile(r"the post .*? appeared first on .*?\.", re.IGNORECASE),
+    re.compile(r"originally (published|appeared) (at|on) .*?\.", re.IGNORECASE),
+]
 
 try:
     from transformers import pipeline
@@ -15,6 +26,15 @@ try:
     )
 except (ImportError, OSError, RuntimeError):
     sentiment_pipeline = None
+
+
+def _strip_html(text: str) -> str:
+    if not text:
+        return ""
+    clean = BeautifulSoup(text, "html.parser").get_text()
+    for pattern in SYNDICATION_PATTERNS:
+        clean = pattern.sub("", clean)
+    return clean
 
 
 def _classify(text: str) -> tuple[str, float]:
@@ -37,7 +57,7 @@ def analyzer_agent(state: PlannerState) -> PlannerState:
         return {**state, "analysis": None}
 
     all_text = " ".join(
-        (a.get("title", "") + " " + a.get("body", "")).lower()
+        (a.get("title", "") + " " + _strip_html(a.get("body", ""))).lower()
         for a in articles
     )
     words = [w.strip(".,!?:;\"'") for w in all_text.split() if len(w) > 4]
@@ -46,7 +66,7 @@ def analyzer_agent(state: PlannerState) -> PlannerState:
 
     article_sentiments = []
     for a in articles:
-        text = (a.get("title", "") + ". " + a.get("body", "")).strip()
+        text = (a.get("title", "") + ". " + _strip_html(a.get("body", ""))).strip()
         label, score = _classify(text)
         article_sentiments.append({
             "title": a.get("title", ""),
