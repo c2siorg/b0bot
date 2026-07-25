@@ -1,10 +1,15 @@
 """Digest building and scheduling helpers."""
 
 import html
-import os
-from pathlib import Path
-from urllib.parse import quote_plus, urlparse
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote_plus, urlparse
+
+from config import (
+    DAILY_DIGEST_WINDOW_DAYS,
+    DIGEST_EMAIL_TEMPLATE,
+    FRONTEND_URL,
+    WEEKLY_DIGEST_WINDOW_DAYS,
+)
 
 
 def utc_now() -> datetime:
@@ -13,8 +18,8 @@ def utc_now() -> datetime:
 
 def get_window_start(now_utc: datetime, frequency: str) -> datetime:
     if frequency == "weekly":
-        return now_utc - timedelta(days=7)
-    return now_utc - timedelta(days=1)
+        return now_utc - timedelta(days=WEEKLY_DIGEST_WINDOW_DAYS)
+    return now_utc - timedelta(days=DAILY_DIGEST_WINDOW_DAYS)
 
 
 def make_idempotency_key(subscriber_id, frequency: str, window_start: datetime) -> str:
@@ -32,15 +37,11 @@ def select_articles_for_digest(articles: list[dict], limit: int = 10) -> list[di
     return articles[:limit]
 
 
-_TEMPLATE_PATH = Path(__file__).parent / "templates" / "digest_email.html"
-_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5000")
-
-
 def _article_redirect_url(article_url: str) -> str:
     if not article_url:
-        return _FRONTEND_URL
+        return FRONTEND_URL
     # Redirect through frontend route so users land on your product UX.
-    return f"{_FRONTEND_URL.rstrip('/')}/news?url={quote_plus(article_url)}"
+    return f"{FRONTEND_URL.rstrip('/')}/news?url={quote_plus(article_url)}"
 
 
 def _render_article_rows(articles: list[dict]) -> str:
@@ -94,7 +95,7 @@ def render_digest_email(articles: list[dict], frequency: str) -> tuple[str, str,
             f"<p style='font-family:sans-serif;font-size:13px;color:#ff6817;font-weight:600;'>B0Bot &middot; {period_label}</p>"
             f"<h2 style='font-family:sans-serif;color:#191919;'>{heading}</h2>"
             f"<p style='font-family:sans-serif;color:#4a4a4a;'>{text_body}</p>"
-            f"<p><a href='{_FRONTEND_URL}' style='color:#ff6817;'>Browse all news</a></p>"
+            f"<p><a href='{FRONTEND_URL}' style='color:#ff6817;'>Browse all news</a></p>"
             "</body></html>"
         )
         return subject, text_body, html_body
@@ -110,15 +111,15 @@ def render_digest_email(articles: list[dict], frequency: str) -> tuple[str, str,
 
     text_body = "\n".join(lines)
 
-    template = _TEMPLATE_PATH.read_text(encoding="utf-8")
-    site_label = urlparse(_FRONTEND_URL).netloc or "B0Bot"
+    template = DIGEST_EMAIL_TEMPLATE.read_text(encoding="utf-8")
+    site_label = urlparse(FRONTEND_URL).netloc or "B0Bot"
     html_body = (
         template.replace("{{SUBJECT}}", html.escape(subject))
         .replace("{{HEADING}}", heading)
         .replace("{{PERIOD_LABEL}}", period_label)
         .replace("{{SUBTITLE}}", subtitle)
         .replace("{{ARTICLE_ROWS}}", _render_article_rows(articles))
-        .replace("{{FRONTEND_URL}}", html.escape(_FRONTEND_URL))
+        .replace("{{FRONTEND_URL}}", html.escape(FRONTEND_URL))
         .replace("{{SITE_LABEL}}", html.escape(site_label))
     )
 

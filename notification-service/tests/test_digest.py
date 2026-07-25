@@ -38,23 +38,19 @@ def test_select_articles_for_digest_latest_slice_only():
 
 
 def test_render_digest_email_with_articles():
-    with patch.dict("os.environ", {"FRONTEND_URL": "https://b0bot.example"}, clear=False):
-        # Re-import to pick up patched env-backed frontend URL.
-        import importlib
-        import digest as digest_module
+    import digest as digest_module
 
-        importlib.reload(digest_module)
-
-    subject, body, html_body = digest_module.render_digest_email(
-        [
-            {
-                "title": "Critical advisory",
-                "source_name": "SecurityWeek",
-                "url": "https://example.com/advisory",
-            }
-        ],
-        "daily",
-    )
+    with patch("digest.FRONTEND_URL", "https://b0bot.example"):
+        subject, body, html_body = digest_module.render_digest_email(
+            [
+                {
+                    "title": "Critical advisory",
+                    "source_name": "SecurityWeek",
+                    "url": "https://example.com/advisory",
+                }
+            ],
+            "daily",
+        )
     assert subject == "B0Bot daily digest"
     assert "Critical advisory" in body
     assert "https://b0bot.example/news?url=https%3A%2F%2Fexample.com%2Fadvisory" in body
@@ -81,16 +77,13 @@ def test_render_digest_email_missing_article_fields_uses_defaults():
 
 
 def test_render_digest_email_missing_url_falls_back_to_frontend():
-    with patch.dict("os.environ", {"FRONTEND_URL": "https://b0bot.example"}, clear=False):
-        import importlib
-        import digest as digest_module
+    import digest as digest_module
 
-        importlib.reload(digest_module)
-
-    _subject, body, html_body = digest_module.render_digest_email(
-        [{"title": "No link article", "source_name": "Feed"}],
-        "daily",
-    )
+    with patch("digest.FRONTEND_URL", "https://b0bot.example"):
+        _subject, body, html_body = digest_module.render_digest_email(
+            [{"title": "No link article", "source_name": "Feed"}],
+            "daily",
+        )
 
     assert "https://b0bot.example" in body
     assert "https://b0bot.example" in html_body

@@ -7,7 +7,6 @@ deduplicates by url_hash against the ``processed_jobs`` table, and enqueues
 import asyncio
 import hashlib
 import logging
-import os
 import time
 import uuid
 from datetime import datetime, timezone
@@ -15,50 +14,22 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import feedparser
 from bullmq import Queue
+
+from config import (
+    ARTICLE_DISCOVERED_QUEUE,
+    ARTICLE_SCHEMA_VERSION,
+    CONTENT_SNIPPET_MAX_LEN,
+    DEFAULT_ARTICLE_LANGUAGE,
+    EVENT_ARTICLE_DISCOVERED,
+    RSS_FEED_TIMEOUT,
+    RSS_USER_AGENT,
+    TRACKING_QUERY_PREFIXES,
+    article_idempotency_key,
+)
 from db import get_connection, is_processed
+from feeds import RSS_FEEDS
 
 logger = logging.getLogger(__name__)
-
-QUEUE_NAME = os.getenv("ARTICLE_DISCOVERED_QUEUE", "article-discovered")
-RSS_FEED_TIMEOUT = int(os.getenv("RSS_FEED_TIMEOUT", "10"))
-
-# Curated cybersecurity RSS feeds (no API key required).
-# Reddit/Mastodon/YouTube connectors are out of scope for GSoC — see .cursorrules.
-RSS_FEEDS = [
-    {
-        "name": "The Hacker News",
-        "url": "https://thehackernews.com/feeds/posts/default",
-        "category": "Breaking news",
-    },
-    {
-        "name": "KrebsOnSecurity",
-        "url": "https://krebsonsecurity.com/feed/",
-        "category": "Deep investigations",
-    },
-    {
-        "name": "BleepingComputer",
-        "url": "https://www.bleepingcomputer.com/feed/",
-        "category": "Malware/incidents",
-    },
-    {
-        "name": "CISA Alerts",
-        "url": "https://us-cert.cisa.gov/mlist.xml",
-        "category": "Official advisories",
-    },
-    {
-        "name": "CyberScoop",
-        "url": "https://www.cyberscoop.com/feed/",
-        "category": "Industry analysis",
-    },
-    {
-        "name": "SecurityWeek",
-        "url": "https://www.securityweek.com/feed",
-        "category": "Weekly roundup",
-    },
-]
-
-# Tracking query params to strip during normalization.
-_TRACKING_PREFIXES = ("utm_", "fbclid", "gclid", "ref", "source")
 
 
 def normalize_url(url: str) -> str:
@@ -69,18 +40,15 @@ def normalize_url(url: str) -> str:
     - Remove tracking query params (utm_*, fbclid, gclid, etc.)
     """
     parts = urlsplit(url.strip())
-    # Lowercase scheme + netloc.
     scheme = parts.scheme.lower()
     netloc = parts.netloc.lower()
     path = parts.path
-    # Drop fragment.
     fragment = ""
-    # Filter tracking params.
     if parts.query:
         cleaned_query = [
             (key, value)
             for key, value in parse_qsl(parts.query, keep_blank_values=True)
-            if not any(key.lower().startswith(prefix) for prefix in _TRACKING_PREFIXES)
+            if not any(key.lower().startswith(prefix) for prefix in TRACKING_QUERY_PREFIXES)
         ]
         query = urlencode(cleaned_query)
     else:
@@ -106,7 +74,6 @@ def _parse_entry(entry: dict, feed: dict) -> dict | None:
     normalized = normalize_url(link)
     url_hash = compute_url_hash(normalized)
 
-    # Description / snippet — prefer summary over content.
     snippet = ""
     if entry.get("summary"):
         snippet = entry["summary"]
@@ -116,8 +83,7 @@ def _parse_entry(entry: dict, feed: dict) -> dict | None:
             snippet = content_list[0].get("value", "")
         elif isinstance(content_list, str):
             snippet = content_list
-    # Trim to a reasonable snippet length.
-    snippet = snippet.strip()[:500]
+    snippet = snippet.strip()[:CONTENT_SNIPPET_MAX_LEN]
 
     published_date = None
     if entry.get("published_parsed"):
@@ -153,15 +119,15 @@ def _parse_entry(entry: dict, feed: dict) -> dict | None:
 
 def _build_job(payload: dict) -> dict:
     """Wrap an article payload in the article.discovered event contract."""
-    idempotency_key = f"article:{payload['url_hash']}:discovered"
+    idempotency_key = article_idempotency_key(payload["url_hash"])
     return {
         "event_id": str(uuid.uuid4()),
-        "event_type": "article.discovered",
+        "event_type": EVENT_ARTICLE_DISCOVERED,
         "trace_id": f"poll-{int(time.time())}",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "idempotency_key": idempotency_key,
         "payload": {
-            "schema_version": 1,
+            "schema_version": ARTICLE_SCHEMA_VERSION,
             "source_name": payload["source_name"],
             "feed_url": payload["feed_url"],
             "title": payload["title"],
@@ -171,7 +137,7 @@ def _build_job(payload: dict) -> dict:
             "published_at": payload["published_at"],
             "content_snippet": payload["content_snippet"],
             "image_url": payload["image_url"],
-            "language": "en",
+            "language": DEFAULT_ARTICLE_LANGUAGE,
         },
     }
 
@@ -181,7 +147,10 @@ def _fetch_feed(feed_url: str) -> list[dict]:
 
     feedparser is blocking, so callers should run this in a thread executor.
     """
-    parsed = feedparser.parse(feed_url, request_headers={"User-Agent": "B0Bot/1.0"})
+    parsed = feedparser.parse(
+        feed_url,
+        request_headers={"User-Agent": RSS_USER_AGENT},
+    )
     if parsed.bozo and not parsed.entries:
         logger.warning("feed parse error for %s: %s", feed_url, getattr(parsed, "bozo_exception", ""))
         return []
@@ -197,7 +166,7 @@ class RssPoller:
 
     def _get_queue(self) -> Queue:
         if self._queue is None:
-            self._queue = Queue(QUEUE_NAME, {"connection": self.redis_url})
+            self._queue = Queue(ARTICLE_DISCOVERED_QUEUE, {"connection": self.redis_url})
         return self._queue
 
     def _already_processed(self, idempotency_key: str) -> bool:
@@ -207,7 +176,6 @@ class RssPoller:
                 return is_processed(conn, idempotency_key)
         except Exception:
             logger.exception("failed checking processed_jobs for %s", idempotency_key)
-            # Fail open — skip enqueue on DB error to avoid duplicate storms.
             return True
 
     async def poll_all_feeds(self) -> None:
@@ -236,7 +204,7 @@ class RssPoller:
                     logger.debug("skipping entry with missing title/link in %s", feed["url"])
                     continue
 
-                idempotency_key = f"article:{parsed['url_hash']}:discovered"
+                idempotency_key = article_idempotency_key(parsed["url_hash"])
                 if self._already_processed(idempotency_key):
                     skipped += 1
                     continue
@@ -244,7 +212,7 @@ class RssPoller:
                 job_data = _build_job(parsed)
                 try:
                     await queue.add(
-                        "article.discovered",
+                        EVENT_ARTICLE_DISCOVERED,
                         job_data,
                         {"jobId": idempotency_key},
                     )

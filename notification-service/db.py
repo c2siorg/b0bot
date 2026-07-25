@@ -1,17 +1,12 @@
 """Database helpers for notification-service."""
 
-import os
 from contextlib import contextmanager
 from datetime import datetime
 
 import psycopg
 from psycopg.rows import dict_row
 
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://b0bot:b0bot@postgres:5432/b0bot",
-)
+from config import DATABASE_URL
 
 
 @contextmanager

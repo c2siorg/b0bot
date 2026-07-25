@@ -13,6 +13,7 @@ import signal
 
 from bullmq import Worker
 
+from config import ARTICLE_DISCOVERED_QUEUE, POLLING_INTERVAL_SECONDS, REDIS_URL
 from handler import handle_article_discovered
 from poller import RssPoller
 
@@ -21,10 +22,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger("ingestion-service")
-
-QUEUE_NAME = os.getenv("ARTICLE_DISCOVERED_QUEUE", "article-discovered")
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-POLLING_INTERVAL_SECONDS = int(os.getenv("POLLING_INTERVAL_SECONDS", "900"))
 
 
 async def process_job(job, job_token):
@@ -56,8 +53,8 @@ async def main():
     signal.signal(signal.SIGTERM, handle_signal)
     signal.signal(signal.SIGINT, handle_signal)
 
-    logger.info("listening on queue %s", QUEUE_NAME)
-    worker = Worker(QUEUE_NAME, process_job, {"connection": REDIS_URL})
+    logger.info("listening on queue %s", ARTICLE_DISCOVERED_QUEUE)
+    worker = Worker(ARTICLE_DISCOVERED_QUEUE, process_job, {"connection": REDIS_URL})
 
     logger.info("starting RSS poller (interval: %ss)", POLLING_INTERVAL_SECONDS)
     poller_task = asyncio.create_task(run_poller(shutdown))

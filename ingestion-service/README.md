@@ -43,3 +43,8 @@ docker compose exec ingestion-service python scripts/publish_test_job.py
 | `DATABASE_URL` | `postgresql://b0bot:b0bot@postgres:5432/b0bot` | Postgres connection |
 | `REDIS_URL` | `redis://redis:6379/0` | BullMQ queue |
 | `ARTICLE_DISCOVERED_QUEUE` | `article-discovered` | Queue name |
+| `POLLING_INTERVAL_SECONDS` | `900` | RSS polling interval |
+| `RSS_FEED_TIMEOUT` | `10` | Per-feed fetch timeout (seconds) |
+| `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Embedding model |
+
+RSS feed URLs live in `feeds.py`. Shared env defaults and event constants live in `config.py`.

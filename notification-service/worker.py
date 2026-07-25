@@ -4,9 +4,16 @@ Schedules digest checks, selects recent articles, sends SMTP emails, and logs
 deliveries in ``digest_deliveries`` with idempotency protection.
 """
 import logging
-import os
 import time
 
+from config import (
+    DEFAULT_EMAIL_PROVIDER,
+    DELIVERY_STATUS_FAILED,
+    DELIVERY_STATUS_SENT,
+    DIGEST_CHECK_INTERVAL_SECONDS,
+    MAX_DIGEST_ARTICLES,
+    MAX_ERROR_MESSAGE_LEN,
+)
 from db import (
     delivery_exists,
     get_connection,
@@ -29,9 +36,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger("notification-service")
-
-DIGEST_CHECK_INTERVAL_SECONDS = int(os.getenv("DIGEST_CHECK_INTERVAL", "3600"))
-MAX_DIGEST_ARTICLES = int(os.getenv("MAX_DIGEST_ARTICLES", "10"))
 
 
 def run_once() -> None:
@@ -68,8 +72,9 @@ def run_once() -> None:
                     conn,
                     subscriber_id=subscriber_id,
                     article_ids=article_ids,
-                    status="sent",
+                    status=DELIVERY_STATUS_SENT,
                     idempotency_key=idem_key,
+                    provider=DEFAULT_EMAIL_PROVIDER,
                 )
                 update_digest_sent_at(conn, subscriber_id, now)
                 conn.commit()
@@ -82,9 +87,10 @@ def run_once() -> None:
                         conn,
                         subscriber_id=subscriber_id,
                         article_ids=[],
-                        status="failed",
+                        status=DELIVERY_STATUS_FAILED,
                         idempotency_key=idem_key,
-                        error_message=str(exc)[:1000],
+                        error_message=str(exc)[:MAX_ERROR_MESSAGE_LEN],
+                        provider=DEFAULT_EMAIL_PROVIDER,
                     )
                     conn.commit()
                 except Exception:
