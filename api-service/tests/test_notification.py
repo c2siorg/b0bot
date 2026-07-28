@@ -65,6 +65,17 @@ class TestNotificationAgent:
         result = notification_agent(state)
         mock_db.create_subscriber.assert_called_once_with(email="vishak@example.com", frequency="daily", interests=["malware"])
 
+    def test_newly_added_interest_tags_matched(self, mocker):
+        from agents import notification as notification_module
+        mock_db = MagicMock()
+        mock_db.create_subscriber.return_value = True
+        mocker.patch.object(notification_module, "db", mock_db)
+        from agents.notification import notification_agent
+        state = make_state(user_input="subscribe vishak@example.com to phishing and zero-day alerts weekly")
+        result = notification_agent(state)
+        assert result["notification_triggered"] is True
+        mock_db.create_subscriber.assert_called_once_with(email="vishak@example.com", frequency="weekly", interests=["phishing", "zero-day"])
+
     def test_multi_turn_gathers_email_from_prior_subscribe_turn(self, mocker):
         from agents import notification as notification_module
         mock_db = MagicMock()

@@ -2,7 +2,10 @@ import re
 from agents.state import PlannerState
 from models.SubscriberModel import SubscriberDB
 
-KNOWN_INTEREST_TAGS = {"malware", "ransomware", "cve", "data breach", "vulnerability"}
+KNOWN_INTEREST_TAGS = {
+    "malware", "ransomware", "cve", "data breach", "vulnerability",
+    "phishing", "zero-day", "data leak", "supply chain", "insider threat",
+}
 EVERYTHING_PHRASES = {"everything", "all articles", "all news", "anything", "all topics"}
 
 db = SubscriberDB()
@@ -21,7 +24,7 @@ def _extract_frequency(text: str) -> str:
 
 def _extract_known_interests(text: str) -> list[str]:
     lowered = text.lower()
-    return [tag for tag in KNOWN_INTEREST_TAGS if tag in lowered]
+    return [tag for tag in sorted(KNOWN_INTEREST_TAGS) if tag in lowered]
 
 
 def _wants_everything(text: str) -> bool:
