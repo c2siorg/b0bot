@@ -77,3 +77,14 @@ class TestAnalyzerAgent:
         state = make_state(retrieved_articles=SAMPLE_ARTICLES)
         result = analyzer_agent(state)
         assert result["analysis"]["sentiment"] == "neutral"
+
+    def test_html_tags_not_leaked_into_keyword_frequency(self):
+        from agents.analyzer import analyzer_agent
+        articles = [{
+            "title": "Ransomware campaign hits healthcare providers",
+            "body": "<p>The post <a href=\"https://example.com\">Ransomware campaign</a> appeared first on <a href=\"https://example.com\">Example</a>.</p>",
+        }]
+        state = make_state(retrieved_articles=articles)
+        result = analyzer_agent(state)
+        words = [word for word, count in result["analysis"]["keyword_frequency"]]
+        assert not any(word.startswith("<") or "href=" in word for word in words)

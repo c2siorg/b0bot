@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ page_name }}{% endblock %}
+
+{% block extra_style %}
+#coming-soon {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+}
+
+#coming-soon h1 {
+    font-family: var(--font-heading);
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+#coming-soon p {
+    color: var(--color-text-muted-dark);
+}
+{% endblock %}
+
+{% block content %}
+<div id="coming-soon">
+    <h1>{{ page_name }}</h1>
+    <p>Coming soon.</p>
+</div>
+{% endblock %}

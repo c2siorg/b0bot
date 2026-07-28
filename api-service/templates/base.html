@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>b0bot - {% block title %}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            var saved = localStorage.getItem('b0bot-theme');
+            if (saved === 'light') document.documentElement.classList.add('light');
+        })();
+    </script>
+    <style>
+        :root {
+            --color-primary: #FF6817;
+            --color-bg-dark: #121414;
+            --color-bg-light: #FBF4EA;
+            --color-surface-dark: #1c1f1f;
+            --color-border-dark: rgba(255, 255, 255, 0.1);
+            --color-text-dark: #f2f2f0;
+            --color-text-muted-dark: rgba(242, 242, 240, 0.6);
+            --font-heading: 'Sora', sans-serif;
+            --font-body: 'Hanken Grotesk', sans-serif;
+        }
+
+        html.light {
+            --color-bg-dark: var(--color-bg-light);
+            --color-surface-dark: #f2ebe0;
+            --color-border-dark: rgba(18, 20, 20, 0.1);
+            --color-text-dark: #191919;
+            --color-text-muted-dark: rgba(25, 25, 25, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            font-family: var(--font-body);
+            background: var(--color-bg-dark);
+            color: var(--color-text-dark);
+        }
+
+        #sidebar {
+            width: 180px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--color-border-dark);
+            padding: 20px 12px;
+        }
+
+        #logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            margin-bottom: 24px;
+            text-decoration: none;
+            color: var(--color-text-dark);
+        }
+
+        #logo img {
+            height: 32px;
+            width: auto;
+            display: block;
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--color-text-muted-dark);
+            font-family: var(--font-body);
+            font-size: 0.95em;
+        }
+
+        nav a.active {
+            background: var(--color-primary);
+            color: #ffffff;
+        }
+
+        nav a:not(.active):hover {
+            background: var(--color-surface-dark);
+        }
+
+        #theme-toggle {
+            margin-top: auto;
+            background: none;
+            border: none;
+            color: var(--color-text-muted-dark);
+            cursor: pointer;
+            padding: 10px 12px;
+            font-family: var(--font-body);
+            font-size: 0.9em;
+            text-align: left;
+            border-radius: 6px;
+        }
+
+        #theme-toggle:hover {
+            background: var(--color-surface-dark);
+        }
+
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        {% block extra_style %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <a href="/dashboard" id="logo">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="B0Bot">
+        </a>
+        <nav>
+            <a href="/dashboard" class="{% if active_page == 'home' %}active{% endif %}">Home</a>
+            <a href="/sources" class="{% if active_page == 'sources' %}active{% endif %}">Sources</a>
+            <a href="/chat" class="{% if active_page == 'chat' %}active{% endif %}">Chat</a>
+        </nav>
+        <button id="theme-toggle" onclick="toggleTheme()">Toggle theme</button>
+    </div>
+    <div id="main">
+        {% block content %}{% endblock %}
+    </div>
+    <script>
+        function toggleTheme() {
+            document.documentElement.classList.toggle('light');
+            localStorage.setItem('b0bot-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark');
+        }
+    </script>
+    {% block extra_script %}{% endblock %}
+</body>
+</html>

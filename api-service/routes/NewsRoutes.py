@@ -110,7 +110,21 @@ chat UI route
 """
 @routes.route("/chat", methods=["GET"])
 def chat_ui_route():
-    return render_template("chat.html")
+    return render_template("chat.html", active_page="chat")
+
+"""
+dashboard placeholder route, real dashboard lands week 9
+"""
+@routes.route("/dashboard", methods=["GET"])
+def dashboard_route():
+    return render_template("coming_soon.html", active_page="home", page_name="Home")
+
+"""
+sources placeholder route, real sources page lands week 9
+"""
+@routes.route("/sources", methods=["GET"])
+def sources_route():
+    return render_template("coming_soon.html", active_page="sources", page_name="Sources")
 
 """
 chat route - multi-turn dialogue via LangGraph agents
