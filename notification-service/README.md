@@ -37,3 +37,6 @@ docker compose up notification-service
 | `SMTP_USER` / `SMTP_PASSWORD` | — | SMTP auth (optional if relay allows anonymous) |
 | `SMTP_FROM` | — | Sender email address |
 | `SMTP_USE_TLS` | `true` | Enable STARTTLS |
+| `FRONTEND_URL` | `http://localhost:5000` | Links in digest emails |
+
+Shared env defaults and delivery constants live in `config.py`.

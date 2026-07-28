@@ -1,19 +1,15 @@
 """Postgres helpers for the ingestion worker."""
-import os
 from contextlib import contextmanager
 
 import psycopg
 from psycopg.rows import dict_row
 
+from config import DATABASE_URL
+
 try:
     from pgvector.psycopg import register_vector
 except ImportError:
     register_vector = None
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://b0bot:b0bot@postgres:5432/b0bot",
-)
 
 
 @contextmanager

@@ -7,6 +7,7 @@ so the row can be retried later.
 """
 import logging
 
+from config import EVENT_ARTICLE_DISCOVERED
 from db import get_connection, is_processed, mark_processed, upsert_article
 from embeddings import generate_embedding, prepare_embedding_text
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def handle_article_discovered(data: dict) -> None:
     event_type = data.get("event_type")
-    if event_type != "article.discovered":
+    if event_type != EVENT_ARTICLE_DISCOVERED:
         logger.warning("skipping unknown event type: %s", event_type)
         return
 

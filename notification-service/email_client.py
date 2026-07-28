@@ -1,16 +1,17 @@
 """SMTP email sender for notification-service."""
 
-import os
 import smtplib
 from email.message import EmailMessage
 
-
-SMTP_HOST = os.getenv("SMTP_HOST", "")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "")
-SMTP_USE_TLS = os.getenv("SMTP_USE_TLS", "true").lower() == "true"
+from config import (
+    SMTP_FROM,
+    SMTP_HOST,
+    SMTP_PASSWORD,
+    SMTP_PORT,
+    SMTP_TIMEOUT_SECONDS,
+    SMTP_USE_TLS,
+    SMTP_USER,
+)
 
 
 def send_email(to_email: str, subject: str, body: str, html_body: str | None = None) -> None:
@@ -25,7 +26,7 @@ def send_email(to_email: str, subject: str, body: str, html_body: str | None = N
     if html_body:
         msg.add_alternative(html_body, subtype="html")
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT_SECONDS) as server:
         if SMTP_USE_TLS:
             server.starttls()
         if SMTP_USER:

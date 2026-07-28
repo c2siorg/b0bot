@@ -4,16 +4,10 @@ Uses ``sentence-transformers/all-MiniLM-L6-v2`` to produce 384-dim vectors
 for hybrid search in pgvector.
 """
 import logging
-import os
+
+from config import EMBEDDING_DIM, EMBEDDING_MODEL, MAX_EMBEDDING_INPUT_CHARS
 
 logger = logging.getLogger(__name__)
-
-EMBEDDING_MODEL = os.getenv(
-    "EMBEDDING_MODEL",
-    "sentence-transformers/all-MiniLM-L6-v2",
-)
-EMBEDDING_DIM = 384
-MAX_TOKEN_LENGTH = 512
 
 _model = None
 
@@ -40,7 +34,7 @@ def generate_embedding(text: str) -> list[float]:
     try:
         model = _get_model()
         # Truncate input to avoid exceeding model context window.
-        truncated = text[:MAX_TOKEN_LENGTH * 4]
+        truncated = text[:MAX_EMBEDDING_INPUT_CHARS]
         vector = model.encode(truncated, convert_to_numpy=True)
         return vector.tolist()
     except Exception:
