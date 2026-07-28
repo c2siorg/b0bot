@@ -55,6 +55,17 @@ class TestNotificationAgent:
         assert result["notification_triggered"] is True
         mock_db.create_subscriber.assert_called_once_with(email="vishak@example.com", frequency="weekly", interests=["ransomware"])
 
+    def test_unsupported_frequency_asks_clarifying_question(self, mocker):
+        from agents import notification as notification_module
+        mock_db = MagicMock()
+        mocker.patch.object(notification_module, "db", mock_db)
+        from agents.notification import notification_agent
+        state = make_state(user_input="subscribe vishak@example.com to malware monthly")
+        result = notification_agent(state)
+        assert result["notification_triggered"] is False
+        assert "daily or weekly" in result["notification_message"]
+        mock_db.create_subscriber.assert_not_called()
+
     def test_default_frequency_is_daily(self, mocker):
         from agents import notification as notification_module
         mock_db = MagicMock()

@@ -16,9 +16,15 @@ def _extract_email(text: str) -> str:
     return match.group(0) if match else ""
 
 
-def _extract_frequency(text: str) -> str:
-    if "weekly" in text.lower():
+UNSUPPORTED_FREQUENCY_TERMS = {"hourly", "monthly", "biweekly", "quarterly", "real-time", "instant", "every hour", "every 12 hours"}
+
+
+def _extract_frequency(text: str) -> str | None:
+    lowered = text.lower()
+    if "weekly" in lowered:
         return "weekly"
+    if any(term in lowered for term in UNSUPPORTED_FREQUENCY_TERMS):
+        return None
     return "daily"
 
 
@@ -64,6 +70,12 @@ def notification_agent(state: PlannerState) -> PlannerState:
         }
 
     frequency = _extract_frequency(combined)
+    if frequency is None:
+        return {
+            **state,
+            "notification_triggered": False,
+            "notification_message": "only daily or weekly digests are supported right now, which one do you want?",
+        }
     interests = _extract_known_interests(combined)
     everything = _wants_everything(combined)
 
