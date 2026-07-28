@@ -26,6 +26,13 @@ class TestNotificationAgent:
         assert result["notification_triggered"] is False
         assert "email" in result["notification_message"].lower()
 
+    def test_malformed_email_treated_as_missing(self, mocker):
+        from agents.notification import notification_agent
+        state = make_state(user_input="subscribe a..b@x.com to malware alerts daily")
+        result = notification_agent(state)
+        assert result["notification_triggered"] is False
+        assert "email" in result["notification_message"].lower()
+
     def test_asks_for_interests_when_no_known_tag_matched(self, mocker):
         from agents.notification import notification_agent
         state = make_state(user_input="subscribe vishak@example.com to cybersecurity news")
@@ -65,6 +72,17 @@ class TestNotificationAgent:
         assert result["notification_triggered"] is False
         assert "daily or weekly" in result["notification_message"]
         mock_db.create_subscriber.assert_not_called()
+
+    def test_db_failure_returns_error_message_not_false_success(self, mocker):
+        from agents import notification as notification_module
+        mock_db = MagicMock()
+        mock_db.create_subscriber.return_value = False
+        mocker.patch.object(notification_module, "db", mock_db)
+        from agents.notification import notification_agent
+        state = make_state(user_input="subscribe vishak@example.com to malware daily")
+        result = notification_agent(state)
+        assert result["notification_triggered"] is False
+        assert "went wrong" in result["notification_message"]
 
     def test_default_frequency_is_daily(self, mocker):
         from agents import notification as notification_module

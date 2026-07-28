@@ -12,7 +12,7 @@ db = SubscriberDB()
 
 
 def _extract_email(text: str) -> str:
-    match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
+    match = re.search(r"(?<![\w.])[a-zA-Z0-9_%+-]+(?:\.[a-zA-Z0-9_%+-]+)*@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}(?![\w.])", text)
     return match.group(0) if match else ""
 
 
@@ -87,7 +87,13 @@ def notification_agent(state: PlannerState) -> PlannerState:
             "notification_message": f"which topics are you interested in? options are {options}, or say everything for all articles",
         }
 
-    db.create_subscriber(email=email, frequency=frequency, interests=interests)
+    created = db.create_subscriber(email=email, frequency=frequency, interests=interests)
+    if not created:
+        return {
+            **state,
+            "notification_triggered": False,
+            "notification_message": "something went wrong saving your subscription, can you try again in a bit?",
+        }
 
     if interests:
         topics_text = ", ".join(sorted(interests))
