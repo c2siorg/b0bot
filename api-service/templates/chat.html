@@ -214,9 +214,27 @@
             parsed.articles.forEach(function (a) {
                 const art = document.createElement('div');
                 art.classList.add('article');
-                const sentLabel = sentimentMap[a.title] ? ' &middot; ' + sentimentMap[a.title] : '';
-                art.innerHTML = '<a href="' + a.url + '" target="_blank">' + a.title + '</a>' +
-                    '<div style="opacity:0.7;font-size:0.85em;margin-top:4px;">' + a.source + ' &middot; ' + a.date + sentLabel + '</div>';
+                const link = document.createElement('a');
+                link.href = a.url;
+                link.target = '_blank';
+                link.textContent = a.title;
+                art.appendChild(link);
+
+                const meta = document.createElement('div');
+                meta.style.opacity = '0.7';
+                meta.style.fontSize = '0.85em';
+                meta.style.marginTop = '4px';
+                const sentLabel = sentimentMap[a.title] ? ' \u00b7 ' + sentimentMap[a.title] : '';
+                meta.textContent = a.source + ' \u00b7 ' + a.date + sentLabel;
+                art.appendChild(meta);
+
+                if (a.summary) {
+                    const summaryEl = document.createElement('div');
+                    summaryEl.style.marginTop = '6px';
+                    summaryEl.textContent = a.summary;
+                    art.appendChild(summaryEl);
+                }
+
                 body.appendChild(art);
             });
         }

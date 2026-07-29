@@ -12,6 +12,7 @@ ingestion-service/worker.py, run directly rather than imported:
 """
 import logging
 import os
+import time
 
 from dotenv import load_dotenv
 
@@ -82,5 +83,18 @@ def run_once() -> None:
         logger.info("summarized %d/%d articles", succeeded, len(articles))
 
 
+SUMMARY_CHECK_INTERVAL_SECONDS = int(os.getenv("SUMMARY_CHECK_INTERVAL", "3600"))
+
+
+def main() -> None:
+    logger.info(
+        "summarize-articles starting (check interval: %ss)",
+        SUMMARY_CHECK_INTERVAL_SECONDS,
+    )
+    while True:
+        run_once()
+        time.sleep(SUMMARY_CHECK_INTERVAL_SECONDS)
+
+
 if __name__ == "__main__":
-    run_once()
+    main()

@@ -72,7 +72,18 @@ class TestScraperAgent:
         from agents.scraper import scraper_agent
         state = make_state(intent="search", keywords=["ransomware"])
         result = scraper_agent(state)
-        assert result["retrieved_articles"][0] == {"title": "Test", "source": "Src", "date": "01/01/2026", "url": "http://x.com", "body": "body text"}
+        assert result["retrieved_articles"][0] == {"title": "Test", "source": "Src", "date": "01/01/2026", "url": "http://x.com", "body": "body text", "summary": None}
+
+    def test_summary_passed_through_when_present(self, mocker):
+        from agents import scraper as scraper_module
+        raw = [{"headlines": "Test", "author": "Src", "newsDate": "01/01/2026", "newsURL": "http://x.com", "fullNews": "body text", "summary": "a clean summary"}]
+        mock_db = MagicMock()
+        mock_db.get_news_collections.return_value = raw
+        mocker.patch.object(scraper_module, "db", mock_db)
+        from agents.scraper import scraper_agent
+        state = make_state(intent="search", keywords=["ransomware"])
+        result = scraper_agent(state)
+        assert result["retrieved_articles"][0]["summary"] == "a clean summary"
 
     def test_query_embedded_and_passed_to_hybrid_search(self, mocker):
         from agents import scraper as scraper_module

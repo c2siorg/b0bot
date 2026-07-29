@@ -37,6 +37,7 @@ def scraper_agent(state: PlannerState) -> PlannerState:
             "date": a.get("newsDate", "No date"),
             "url": a.get("newsURL", "No URL"),
             "body": a.get("fullNews", ""),
+            "summary": a.get("summary"),
         }
         for a in articles[:10]
     ]
