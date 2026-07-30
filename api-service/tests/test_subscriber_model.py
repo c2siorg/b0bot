@@ -82,3 +82,40 @@ class TestSubscriberDB:
         result = db.create_subscriber(email="test4@example.com", interests=["malware"])
 
         assert result is False
+
+
+class TestUnsubscribe:
+    def test_unsubscribe_sets_status_and_returns_true(self, mocker):
+        from models import SubscriberModel
+        conn_cm, mock_conn, mock_cur = make_conn_mock()
+        mock_cur.rowcount = 1
+        mocker.patch.object(SubscriberModel, "get_connection", return_value=conn_cm)
+
+        db = SubscriberDB()
+        result = db.unsubscribe("some-uuid")
+
+        assert result is True
+        sql, params = mock_cur.execute.call_args[0]
+        assert "SET status = 'unsubscribed'" in sql
+        assert params == {"subscriber_id": "some-uuid"}
+        mock_conn.commit.assert_called_once()
+
+    def test_unknown_id_returns_false(self, mocker):
+        from models import SubscriberModel
+        conn_cm, mock_conn, mock_cur = make_conn_mock()
+        mock_cur.rowcount = 0
+        mocker.patch.object(SubscriberModel, "get_connection", return_value=conn_cm)
+
+        db = SubscriberDB()
+        result = db.unsubscribe("nonexistent-uuid")
+
+        assert result is False
+
+    def test_returns_false_on_db_error(self, mocker):
+        from models import SubscriberModel
+        mocker.patch.object(SubscriberModel, "get_connection", side_effect=Exception("connection refused"))
+
+        db = SubscriberDB()
+        result = db.unsubscribe("some-uuid")
+
+        assert result is False

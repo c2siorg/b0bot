@@ -52,3 +52,23 @@ class SubscriberDB:
         except Exception as exc:
             logger.error("Failed to create subscriber: %s", exc)
             return False
+
+    def unsubscribe(self, subscriber_id: str) -> bool:
+        """Set a subscriber's status to unsubscribed. Returns False (and
+        logs) if the id doesn't match a row or the database is unreachable."""
+        try:
+            with get_connection() as conn, conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE subscribers
+                    SET status = 'unsubscribed', updated_at = NOW()
+                    WHERE id = %(subscriber_id)s
+                    """,
+                    {"subscriber_id": subscriber_id},
+                )
+                updated = cur.rowcount > 0
+                conn.commit()
+                return updated
+        except Exception as exc:
+            logger.error("Failed to unsubscribe %s: %s", subscriber_id, exc)
+            return False
