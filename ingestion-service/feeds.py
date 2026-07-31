@@ -1,13 +1,4 @@
-"""Curated cybersecurity RSS feed catalog.
-
-Feeds are defined here so poller.py stays focused on fetch/dedup/enqueue logic.
-Each entry is verified manually against feedparser before being added.
-
-GSoC in-scope sources (context.md): The Hacker News, Bleeping Computer, Cyware.
-Cyware does not expose a working public RSS endpoint — track via sources backend later.
-
-Reddit/Mastodon/YouTube connectors are out of scope — see .cursorrules.
-"""
+"""RSS feeds for polling, defined globally."""
 
 RSS_FEEDS = [
     {
@@ -22,7 +13,6 @@ RSS_FEEDS = [
     },
     {
         "name": "CISA Alerts",
-        # Legacy us-cert.cisa.gov/mlist.xml returns Access Denied (CISA retired old RSS in 2025).
         "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
         "category": "Official advisories",
     },
