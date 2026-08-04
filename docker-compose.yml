@@ -55,6 +55,9 @@ services:
       POLLING_INTERVAL_SECONDS: ${POLLING_INTERVAL_SECONDS:-900}
       RSS_FEED_TIMEOUT: ${RSS_FEED_TIMEOUT:-10}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+      METADATA_LLM_MODEL: ${METADATA_LLM_MODEL:-CohereLabs/tiny-aya-global}
+      METADATA_LLM_PROVIDER: ${METADATA_LLM_PROVIDER:-cohere}
     depends_on:
       postgres:
         condition: service_healthy

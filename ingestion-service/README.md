@@ -46,5 +46,11 @@ docker compose exec ingestion-service python scripts/publish_test_job.py
 | `POLLING_INTERVAL_SECONDS` | `900` | RSS polling interval |
 | `RSS_FEED_TIMEOUT` | `10` | Per-feed fetch timeout (seconds) |
 | `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Embedding model |
+| `HUGGINGFACE_TOKEN` | — | HF token for metadata LLM |
+| `METADATA_LLM_MODEL` | `CohereLabs/tiny-aya-global` | Metadata LLM model |
+| `METADATA_LLM_PROVIDER` | `cohere` | HF inference provider |
+
+During ingest, articles get `cve_id` (regex), then `severity`, `affected_system`, and `topic_tags`
+from Cohere via HF when a token is set, with regex/keyword fallback if the call fails.
 
 RSS feed URLs live in `feeds.py`. Shared env defaults and event constants live in `config.py`.
