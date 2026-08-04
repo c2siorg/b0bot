@@ -97,7 +97,7 @@ def upsert_article(conn, payload: dict, embedding=None, embedding_status: str = 
                 "affected_system": payload.get("affected_system"),
                 "topic_tags": payload.get("topic_tags") or [],
                 "embedding_status": embedding_status,
-                "embedding": embedding,
+                "embedding": embedding if embedding else None,
             },
         )
         row = cur.fetchone()
