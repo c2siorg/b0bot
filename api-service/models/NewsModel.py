@@ -31,7 +31,8 @@ _BASE_SELECT = """
         to_char(published_at, 'DD/MM/YYYY')  AS "newsDate",
         url                                  AS "newsURL",
         image_url                            AS "newsImgURL",
-        content                              AS "fullNews"
+        content                              AS "fullNews",
+        summary
     FROM articles
 """
 
@@ -42,7 +43,8 @@ _HYBRID_SELECT = """
         to_char(published_at, 'DD/MM/YYYY')  AS "newsDate",
         url                                  AS "newsURL",
         image_url                            AS "newsImgURL",
-        content                              AS "fullNews"
+        content                              AS "fullNews",
+        summary
     FROM articles
     WHERE embedding IS NOT NULL
     ORDER BY

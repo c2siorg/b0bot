@@ -46,6 +46,18 @@ services:
       redis:
         condition: service_healthy
 
+  summarizer-worker:
+    build: ./api-service
+    command: python3 -m jobs.summarize_articles
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+      SUMMARY_CHECK_INTERVAL: ${SUMMARY_CHECK_INTERVAL:-3600}
+      SUMMARY_BATCH_SIZE: ${SUMMARY_BATCH_SIZE:-50}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   ingestion-service:
     build: ./ingestion-service
     environment:

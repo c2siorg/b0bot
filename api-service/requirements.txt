@@ -4,7 +4,7 @@ langchain-classic==1.0.8
 langchain-community==0.4.2
 langchain-core==1.4.8
 langgraph==1.2.6
-huggingface_hub==1.21.0
+huggingface_hub==1.24.0
 beautifulsoup4==4.15.0
 lxml==6.1.1
 httpx==0.28.1
