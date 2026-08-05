@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Subscribe{% endblock %}
+{% block extra_style %}
+#subscribe-container {
+    max-width: 480px;
+    margin: 48px auto;
+    padding: 32px;
+}
+#subscribe-container h1 {
+    font-family: var(--font-heading);
+    font-size: 1.6em;
+    margin-bottom: 8px;
+}
+#subscribe-container p.subtitle {
+    color: var(--color-text-muted-dark);
+    margin-bottom: 24px;
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+}
+.form-group input[type="email"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--color-surface-dark);
+    border: 1px solid var(--color-border-dark);
+    border-radius: 6px;
+    color: var(--color-text-dark);
+    font-family: var(--font-body);
+}
+.frequency-options label,
+.interest-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 16px;
+    margin-bottom: 8px;
+    font-weight: normal;
+}
+#subscribe-submit {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+#subscribe-message {
+    margin-top: 16px;
+    font-size: 0.9em;
+}
+{% endblock %}
+{% block content %}
+<div id="subscribe-container">
+    <h1>Subscribe to digests</h1>
+    <p class="subtitle">Get cybersecurity news delivered to your inbox.</p>
+    <form id="subscribe-form">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label>Frequency</label>
+            <div class="frequency-options">
+                <label><input type="radio" name="frequency" value="daily" checked> Daily</label>
+                <label><input type="radio" name="frequency" value="weekly"> Weekly</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Interests</label>
+            <div class="interest-options">
+                {% for tag in interest_tags %}
+                <label><input type="checkbox" name="interests" value="{{ tag }}"> {{ tag }}</label>
+                {% endfor %}
+            </div>
+        </div>
+        <button type="submit" id="subscribe-submit">Subscribe</button>
+        <div id="subscribe-message"></div>
+    </form>
+</div>
+{% endblock %}
+{% block extra_script %}
+<script>
+document.getElementById('subscribe-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const messageEl = document.getElementById('subscribe-message');
+    const interests = Array.from(form.querySelectorAll('input[name="interests"]:checked')).map(function (el) {
+        return el.value;
+    });
+    const payload = {
+        email: form.email.value,
+        frequency: form.frequency.value,
+        interests: interests,
+    };
+    fetch('/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            messageEl.textContent = data.message || '';
+            if (data.success) {
+                form.reset();
+            }
+        })
+        .catch(function () {
+            messageEl.textContent = 'something went wrong, please try again';
+        });
+});
+</script>
+{% endblock %}

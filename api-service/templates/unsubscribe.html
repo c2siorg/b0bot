@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribe{% endblock %}
+{% block extra_style %}
+#unsubscribe-container {
+    max-width: 480px;
+    margin: 80px auto;
+    padding: 32px;
+    text-align: center;
+}
+#unsubscribe-container h1 {
+    font-family: var(--font-heading);
+    font-size: 1.5em;
+    margin-bottom: 12px;
+}
+#unsubscribe-container p {
+    color: var(--color-text-muted-dark);
+}
+{% endblock %}
+{% block content %}
+<div id="unsubscribe-container">
+    {% if success %}
+    <h1>You're unsubscribed</h1>
+    <p>You won't receive any more digest emails.</p>
+    {% else %}
+    <h1>Couldn't find that subscription</h1>
+    <p>This link may be expired or already unsubscribed.</p>
+    {% endif %}
+</div>
+{% endblock %}

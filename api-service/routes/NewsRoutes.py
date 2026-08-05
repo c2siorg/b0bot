@@ -1,5 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
+from models.SubscriberModel import SubscriberDB
+from agents.notification import KNOWN_INTEREST_TAGS
 import json
 import os
 import redis
@@ -150,15 +152,51 @@ def chat_route():
 
     response = result["llm_response"]
 
-    history.append({"role": "user", "content": user_input})
+    history.append({"role": "user", "content": user_input, "intent": result.get("intent")})
     history.append({"role": "assistant", "content": response})
     _save_history(session_id, history[-MAX_HISTORY:])
 
     return jsonify({"response": response}), 200
 
 """
-subscribe stub route
+subscribe form - GET renders the form, POST creates the subscriber row
 """
+db = SubscriberDB()
+
+
+@routes.route("/subscribe", methods=["GET"])
+def subscribe_form_route():
+    return render_template("subscribe.html", interest_tags=sorted(KNOWN_INTEREST_TAGS), active_page="subscribe")
+
+
 @routes.route("/subscribe", methods=["POST"])
 def subscribe_route():
-    return jsonify({"message": "subscription endpoint - coming soon"}), 200
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "invalid request"}), 400
+
+    email = (data.get("email") or "").strip()
+    frequency = data.get("frequency") or "daily"
+    interests = data.get("interests") or []
+
+    if not email:
+        return jsonify({"success": False, "message": "email is required"}), 400
+    if frequency not in ("daily", "weekly"):
+        return jsonify({"success": False, "message": "frequency must be daily or weekly"}), 400
+
+    valid_interests = [tag for tag in interests if tag in KNOWN_INTEREST_TAGS]
+
+    created = db.create_subscriber(email=email, frequency=frequency, interests=valid_interests)
+    if not created:
+        return jsonify({"success": False, "message": "something went wrong saving your subscription, please try again"}), 500
+
+    return jsonify({"success": True, "message": "subscribed, you'll get digests based on your interests"}), 200
+
+
+"""
+unsubscribe route - sets status to unsubscribed
+"""
+@routes.route("/unsubscribe/<subscriber_id>", methods=["GET"])
+def unsubscribe_route(subscriber_id):
+    success = db.unsubscribe(subscriber_id)
+    return render_template("unsubscribe.html", success=success)
