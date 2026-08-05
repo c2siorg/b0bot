@@ -50,12 +50,23 @@ def test_render_digest_email_with_articles():
                 }
             ],
             "daily",
+            subscriber_id="abc-123",
         )
     assert subject == "B0Bot daily digest"
     assert "Critical advisory" in body
     assert "https://b0bot.example/news?url=https%3A%2F%2Fexample.com%2Fadvisory" in body
+    assert "https://b0bot.example/unsubscribe/abc-123" in body
     assert "Critical advisory" in html_body
     assert "Browse all news" in html_body
+    assert "https://b0bot.example/unsubscribe/abc-123" in html_body
+
+
+def test_build_unsubscribe_url():
+    from digest import build_unsubscribe_url
+
+    with patch("digest.FRONTEND_URL", "https://b0bot.example/"):
+        assert build_unsubscribe_url("abc-123") == "https://b0bot.example/unsubscribe/abc-123"
+        assert build_unsubscribe_url(None) == "https://b0bot.example"
 
 
 def test_render_digest_email_empty():

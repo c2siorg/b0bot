@@ -26,6 +26,14 @@ def make_idempotency_key(subscriber_id, frequency: str, window_start: datetime) 
     return f"digest:{subscriber_id}:{frequency}:{window_start.isoformat()}"
 
 
+def build_unsubscribe_url(subscriber_id) -> str:
+    """Build the one-click unsubscribe link for digest emails."""
+    base = FRONTEND_URL.rstrip("/")
+    if not subscriber_id:
+        return base
+    return f"{base}/unsubscribe/{subscriber_id}"
+
+
 def select_articles_for_digest(articles: list[dict], limit: int = 10) -> list[dict]:
     """Select top articles for digest.
 
@@ -76,7 +84,13 @@ def _render_article_rows(articles: list[dict]) -> str:
     return "".join(rows)
 
 
-def render_digest_email(articles: list[dict], frequency: str) -> tuple[str, str, str]:
+def render_digest_email(
+    articles: list[dict],
+    frequency: str,
+    *,
+    subscriber_id=None,
+) -> tuple[str, str, str]:
+    unsubscribe_url = build_unsubscribe_url(subscriber_id)
     if frequency == "weekly":
         subject = "B0Bot weekly digest"
         heading = "This week's security news"
@@ -89,13 +103,17 @@ def render_digest_email(articles: list[dict], frequency: str) -> tuple[str, str,
         subtitle = "Stories from the past 24 hours, picked from your subscribed feeds."
 
     if not articles:
-        text_body = "No new articles were published in this period."
+        message = "No new articles were published in this period."
+        text_body = f"{message}\n\nUnsubscribe: {unsubscribe_url}"
         html_body = (
             "<html><body style='font-family:Georgia,serif;background:#fbf4ea;color:#191919;padding:32px;'>"
             f"<p style='font-family:sans-serif;font-size:13px;color:#ff6817;font-weight:600;'>B0Bot &middot; {period_label}</p>"
             f"<h2 style='font-family:sans-serif;color:#191919;'>{heading}</h2>"
-            f"<p style='font-family:sans-serif;color:#4a4a4a;'>{text_body}</p>"
-            f"<p><a href='{FRONTEND_URL}' style='color:#ff6817;'>Browse all news</a></p>"
+            f"<p style='font-family:sans-serif;color:#4a4a4a;'>{html.escape(message)}</p>"
+            f"<p><a href='{html.escape(FRONTEND_URL)}' style='color:#ff6817;'>Browse all news</a></p>"
+            f"<p style='font-family:sans-serif;font-size:12px;color:#7a7a7a;'>"
+            f"<a href='{html.escape(unsubscribe_url)}' style='color:#7a7a7a;'>Unsubscribe</a>"
+            f"</p>"
             "</body></html>"
         )
         return subject, text_body, html_body
@@ -109,6 +127,7 @@ def render_digest_email(articles: list[dict], frequency: str) -> tuple[str, str,
         if url:
             lines.append(f"   {url}")
 
+    lines.extend(["", f"Unsubscribe: {unsubscribe_url}"])
     text_body = "\n".join(lines)
 
     template = DIGEST_EMAIL_TEMPLATE.read_text(encoding="utf-8")
@@ -121,6 +140,7 @@ def render_digest_email(articles: list[dict], frequency: str) -> tuple[str, str,
         .replace("{{ARTICLE_ROWS}}", _render_article_rows(articles))
         .replace("{{FRONTEND_URL}}", html.escape(FRONTEND_URL))
         .replace("{{SITE_LABEL}}", html.escape(site_label))
+        .replace("{{UNSUBSCRIBE_URL}}", html.escape(unsubscribe_url))
     )
 
     return subject, text_body, html_body

@@ -1,8 +1,4 @@
-"""Curated cybersecurity RSS feed catalog.
-
-Feeds are defined here so poller.py stays focused on fetch/dedup/enqueue logic.
-Reddit/Mastodon/YouTube connectors are out of scope for GSoC — see .cursorrules.
-"""
+"""RSS feeds for polling, defined globally."""
 
 RSS_FEEDS = [
     {
@@ -11,28 +7,38 @@ RSS_FEEDS = [
         "category": "Breaking news",
     },
     {
-        "name": "KrebsOnSecurity",
-        "url": "https://krebsonsecurity.com/feed/",
-        "category": "Deep investigations",
-    },
-    {
         "name": "BleepingComputer",
         "url": "https://www.bleepingcomputer.com/feed/",
         "category": "Malware/incidents",
     },
     {
         "name": "CISA Alerts",
-        "url": "https://us-cert.cisa.gov/mlist.xml",
+        "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
         "category": "Official advisories",
     },
     {
-        "name": "CyberScoop",
-        "url": "https://www.cyberscoop.com/feed/",
-        "category": "Industry analysis",
+        "name": "Dark Reading",
+        "url": "https://www.darkreading.com/rss.xml",
+        "category": "Industry news",
+    },
+    {
+        "name": "KrebsOnSecurity",
+        "url": "https://krebsonsecurity.com/feed/",
+        "category": "Deep investigations",
+    },
+    {
+        "name": "Google Security Blog",
+        "url": "https://security.googleblog.com/feeds/posts/default",
+        "category": "Vendor advisories",
+    },
+    {
+        "name": "SANS ISC",
+        "url": "https://isc.sans.edu/rssfeed.xml",
+        "category": "Daily threat brief",
     },
     {
         "name": "SecurityWeek",
-        "url": "https://www.securityweek.com/feed",
+        "url": "https://www.securityweek.com/feed/",
         "category": "Weekly roundup",
     },
 ]

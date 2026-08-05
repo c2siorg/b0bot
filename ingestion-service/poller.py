@@ -146,14 +146,25 @@ def _fetch_feed(feed_url: str) -> list[dict]:
     """Fetch and parse a single RSS feed synchronously.
 
     feedparser is blocking, so callers should run this in a thread executor.
+    Some feeds set bozo=True but still return usable entries (e.g. KrebsOnSecurity).
     """
     parsed = feedparser.parse(
         feed_url,
         request_headers={"User-Agent": RSS_USER_AGENT},
     )
-    if parsed.bozo and not parsed.entries:
-        logger.warning("feed parse error for %s: %s", feed_url, getattr(parsed, "bozo_exception", ""))
-        return []
+    entry_count = len(parsed.entries)
+    if parsed.bozo:
+        exc = getattr(parsed, "bozo_exception", "")
+        if entry_count:
+            logger.warning(
+                "feed parse warning for %s (%d entries kept): %s",
+                feed_url,
+                entry_count,
+                exc,
+            )
+        else:
+            logger.warning("feed parse error for %s: %s", feed_url, exc)
+            return []
     return parsed.entries
 
 
@@ -186,26 +197,36 @@ class RssPoller:
         skipped = 0
 
         for feed in RSS_FEEDS:
+            feed_name = feed["name"]
+            feed_enqueued = 0
+            feed_skipped = 0
+            feed_invalid = 0
+
             try:
                 entries = await asyncio.wait_for(
                     asyncio.get_event_loop().run_in_executor(None, _fetch_feed, feed["url"]),
                     timeout=RSS_FEED_TIMEOUT,
                 )
             except asyncio.TimeoutError:
-                logger.warning("feed timeout (%ss): %s", RSS_FEED_TIMEOUT, feed["url"])
+                logger.warning("feed timeout (%ss): %s (%s)", RSS_FEED_TIMEOUT, feed_name, feed["url"])
                 continue
             except Exception:
-                logger.exception("feed fetch failed: %s", feed["url"])
+                logger.exception("feed fetch failed: %s (%s)", feed_name, feed["url"])
+                continue
+
+            if not entries:
+                logger.warning("feed returned no entries: %s (%s)", feed_name, feed["url"])
                 continue
 
             for entry in entries:
                 parsed = _parse_entry(entry, feed)
                 if parsed is None:
-                    logger.debug("skipping entry with missing title/link in %s", feed["url"])
+                    feed_invalid += 1
                     continue
 
                 idempotency_key = article_idempotency_key(parsed["url_hash"])
                 if self._already_processed(idempotency_key):
+                    feed_skipped += 1
                     skipped += 1
                     continue
 
@@ -216,10 +237,20 @@ class RssPoller:
                         job_data,
                         {"jobId": idempotency_key},
                     )
+                    feed_enqueued += 1
                     enqueued += 1
                 except Exception:
                     logger.exception("failed to enqueue job for %s", parsed["url"])
                     continue
+
+            logger.info(
+                "feed %s — entries: %d, enqueued: %d, skipped: %d, invalid: %d",
+                feed_name,
+                len(entries),
+                feed_enqueued,
+                feed_skipped,
+                feed_invalid,
+            )
 
         logger.info("polling complete — enqueued: %d, skipped (duplicates): %d", enqueued, skipped)
 

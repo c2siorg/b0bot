@@ -64,7 +64,9 @@ def run_once() -> None:
             try:
                 recent = get_recent_articles(conn, window_start, MAX_DIGEST_ARTICLES)
                 selected = select_articles_for_digest(recent, limit=MAX_DIGEST_ARTICLES)
-                subject, body, html_body = render_digest_email(selected, frequency)
+                subject, body, html_body = render_digest_email(
+                    selected, frequency, subscriber_id=subscriber_id
+                )
                 send_email(email, subject, body, html_body=html_body)
 
                 article_ids = [row["id"] for row in selected]

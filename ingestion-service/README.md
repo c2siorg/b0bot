@@ -47,4 +47,10 @@ docker compose exec ingestion-service python scripts/publish_test_job.py
 | `RSS_FEED_TIMEOUT` | `10` | Per-feed fetch timeout (seconds) |
 | `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Embedding model |
 
-RSS feed URLs live in `feeds.py`. Shared env defaults and event constants live in `config.py`.
+RSS feed URLs live in `feeds.py` (8 curated sources; verified manually). Shared env defaults and event constants live in `config.py`.
+
+To live-check all feeds locally:
+
+```bash
+RUN_FEED_INTEGRATION=1 python3 -m pytest tests/test_feeds.py -v
+```
