@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Sources{% endblock %}
+{% block extra_style %}
+#sources-container {
+    max-width: 720px;
+    margin: 48px auto;
+    padding: 32px;
+}
+#sources-container h1 {
+    font-family: var(--font-heading);
+    font-size: 1.6em;
+    margin-bottom: 8px;
+}
+#sources-container p.subtitle {
+    color: var(--color-text-muted-dark);
+    margin-bottom: 24px;
+}
+#sources-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 32px;
+}
+#sources-table th {
+    text-align: left;
+    font-size: 0.85em;
+    color: var(--color-text-muted-dark);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-border-dark);
+}
+#sources-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-dark);
+    font-size: 0.9em;
+}
+.status-badge {
+    font-size: 0.75em;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.status-active {
+    background: rgba(60, 180, 100, 0.15);
+    color: #3cb464;
+}
+.status-pending {
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+}
+#add-source-form {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+#add-source-form input {
+    padding: 10px 12px;
+    background: var(--color-surface-dark);
+    border: 1px solid var(--color-border-dark);
+    border-radius: 6px;
+    color: var(--color-text-dark);
+    font-family: var(--font-body);
+}
+#source-name { width: 180px; }
+#source-url { flex: 1; }
+#add-source-submit {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+#add-source-message {
+    margin-top: 12px;
+    font-size: 0.9em;
+}
+{% endblock %}
+{% block content %}
+<div id="sources-container">
+    <h1>Sources</h1>
+    <p class="subtitle">Your Sources</p>
+    <table id="sources-table">
+        <thead>
+            <tr><th>Source</th><th>URL</th><th>Status</th></tr>
+        </thead>
+        <tbody id="sources-tbody">
+            {% for s in sources %}
+            <tr>
+                <td>{{ s.name }}</td>
+                <td>{{ s.url }}</td>
+                <td><span class="status-badge status-{{ s.status }}">{{ s.status }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <form id="add-source-form">
+        <input type="text" id="source-name" name="name" placeholder="Source name" required>
+        <input type="text" id="source-url" name="url" placeholder="https://example.com/feed" required>
+        <button type="submit" id="add-source-submit">Add</button>
+    </form>
+    <div id="add-source-message"></div>
+</div>
+{% endblock %}
+{% block extra_script %}
+<script>
+document.getElementById('add-source-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const messageEl = document.getElementById('add-source-message');
+    const payload = { name: form.name.value, url: form.url.value };
+    fetch('/sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            messageEl.textContent = data.message || '';
+            if (data.success) {
+                form.reset();
+                const tbody = document.getElementById('sources-tbody');
+                const row = document.createElement('tr');
+                row.innerHTML = '<td>' + payload.name + '</td><td>' + payload.url + '</td>' +
+                    '<td><span class="status-badge status-pending">pending</span></td>';
+                tbody.appendChild(row);
+            }
+        })
+        .catch(function () {
+            messageEl.textContent = 'something went wrong, please try again';
+        });
+});
+</script>
+{% endblock %}
