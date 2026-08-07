@@ -29,7 +29,7 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 ```
 https://www.pinecone.io/
 ```
-Login to Pinecone and create a new index with the name `news-index`. Then, add the Pinecone API key in the `.env` file.
+Login to Pinecone and create a new index with a name of your choice. Then, add the Pinecone API key and your chosen index name to the `.env` file as `PINECONE_API_KEY` and `PINECONE_INDEX_NAME` respectively (see `.env.example`).
 
 
 
