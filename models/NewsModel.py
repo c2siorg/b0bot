@@ -5,7 +5,8 @@ class CybernewsDB:
     def __init__(self):
         from sentence_transformers import SentenceTransformer, SparseEncoder
         self.client = client
-        self.index_name = "cybernews-hybrid-test-2"
+        from dotenv import dotenv_values
+        self.index_name = str.lower(dotenv_values(".env").get("PINECONE_INDEX_NAME"))
         self.namespace = "c2si" 
         self.index = self.client.Index(self.index_name)
         
