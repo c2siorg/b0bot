@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block extra_style %}
+#dashboard-container {
+    max-width: 1000px;
+    margin: 48px auto;
+    padding: 32px;
+}
+#dashboard-container h1 {
+    font-family: var(--font-heading);
+    font-size: 1.6em;
+    margin-bottom: 24px;
+}
+.panel-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+.panel {
+    flex: 1;
+    min-width: 0;
+}
+.panel h2 {
+    font-size: 1em;
+    color: var(--color-text-muted-dark);
+    margin-bottom: 12px;
+}
+.panel table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.panel th {
+    text-align: left;
+    font-size: 0.8em;
+    color: var(--color-text-muted-dark);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--color-border-dark);
+}
+.panel td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border-dark);
+    font-size: 0.85em;
+}
+.panel .empty-row td {
+    color: var(--color-text-muted-dark);
+    font-style: italic;
+}
+.severity-badge {
+    font-size: 0.75em;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+.severity-critical { background: rgba(255, 70, 70, 0.15); color: #ff4646; }
+.severity-high { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
+.severity-medium { background: rgba(255, 220, 0, 0.15); color: #ffdc00; }
+.severity-low { background: rgba(60, 180, 100, 0.15); color: #3cb464; }
+#filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border-dark);
+}
+.filter-tab {
+    color: var(--color-text-muted-dark);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}
+.filter-tab.active {
+    background: var(--color-primary);
+    color: #fff;
+}
+#source-select {
+    margin-left: auto;
+    padding: 6px 10px;
+    background: var(--color-surface-dark);
+    border: 1px solid var(--color-border-dark);
+    border-radius: 6px;
+    color: var(--color-text-dark);
+    font-family: var(--font-body);
+}
+.feed-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-border-dark);
+}
+.feed-item .feed-meta {
+    font-size: 0.8em;
+    color: var(--color-text-muted-dark);
+    margin-bottom: 4px;
+}
+.feed-item a {
+    color: var(--color-text-dark);
+    font-weight: 600;
+    text-decoration: none;
+}
+.feed-item p {
+    margin: 6px 0 8px;
+    font-size: 0.9em;
+    color: var(--color-text-muted-dark);
+}
+.ask-ai-btn {
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.8em;
+    cursor: pointer;
+    font-family: var(--font-body);
+    text-decoration: none;
+    display: inline-block;
+}
+{% endblock %}
+{% block content %}
+<div id="dashboard-container">
+    <h1>Home</h1>
+
+    <div class="panel-row">
+        <div class="panel">
+            <h2>CVE Watchlist</h2>
+            <table>
+                <thead>
+                    <tr><th>CVE-ID</th><th>Severity</th><th>System</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for c in cve_watchlist %}
+                    <tr>
+                        <td><a href="{{ url_for('routes.chat_ui_route') }}?article_id={{ c.id }}">{{ c.cve_id }}</a></td>
+                        {% if c.severity %}<td><span class="severity-badge severity-{{ c.severity|lower }}">{{ c.severity }}</span></td>{% else %}<td>—</td>{% endif %}
+                        <td>{{ c.system or "—" }}</td>
+                        <td>{{ c.date or "—" }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="4">no CVEs tagged yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h2>Top News</h2>
+            <table>
+                <thead>
+                    <tr><th>CVE-ID</th><th>Type</th><th>System</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for n in top_news %}
+                    <tr>
+                        <td>{{ n.cve_id or "—" }}</td>
+                        <td>{% if n.type %}<span class="severity-badge severity-{{ n.type|lower }}">{{ n.type }}</span>{% else %}—{% endif %}</td>
+                        <td>{{ n.system or "—" }}</td>
+                        <td>{{ n.date or "—" }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="empty-row"><td colspan="4">no articles yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="filter-controls">
+        <a href="?filter=newest{% if current_source %}&source={{ current_source|urlencode }}{% endif %}" class="filter-tab{% if current_filter == 'newest' %} active{% endif %}">Newest</a>
+        <a href="?filter=critical{% if current_source %}&source={{ current_source|urlencode }}{% endif %}" class="filter-tab{% if current_filter == 'critical' %} active{% endif %}">Critical</a>
+        <a href="?filter=frequent{% if current_source %}&source={{ current_source|urlencode }}{% endif %}" class="filter-tab{% if current_filter == 'frequent' %} active{% endif %}">Frequent</a>
+        <select id="source-select" onchange="window.location.href='?filter={{ current_filter }}' + (this.value ? '&source=' + encodeURIComponent(this.value) : '')">
+            <option value="">All sources</option>
+            {% for s in sources %}
+            <option value="{{ s }}" {% if s == current_source %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div id="feed">
+        {% for item in feed %}
+        <div class="feed-item">
+            <div class="feed-meta">{{ item.ingested_time }} &middot; {{ item.source_name }}</div>
+            <a href="{{ item.url }}" target="_blank">{{ item.title }}</a>
+            <p>{{ item.summary or "no summary yet" }}</p>
+            <a class="ask-ai-btn" href="{{ url_for('routes.chat_ui_route') }}?article_id={{ item.id }}">Ask AI</a>
+        </div>
+        {% else %}
+        <p>no articles yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
