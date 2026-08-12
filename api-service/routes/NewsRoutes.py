@@ -42,7 +42,7 @@ home page route
 """
 @routes.route("/", methods=["GET"])
 def home_route():
-    return render_template("home.html")
+    return render_template("landing.html")
 
 """
 set route for different LLM models
@@ -166,7 +166,8 @@ db = SubscriberDB()
 
 @routes.route("/subscribe", methods=["GET"])
 def subscribe_form_route():
-    return render_template("subscribe.html", interest_tags=sorted(KNOWN_INTEREST_TAGS), active_page="subscribe")
+    prefill_email = request.args.get("email", "")
+    return render_template("subscribe.html", interest_tags=sorted(KNOWN_INTEREST_TAGS), active_page="subscribe", prefill_email=prefill_email)
 
 
 @routes.route("/subscribe", methods=["POST"])

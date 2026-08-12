@@ -15,6 +15,19 @@ class TestSubscribeFormRoute:
         assert b"malware" in response.data
         assert b"ransomware" in response.data
 
+    def test_email_prefilled_from_query_param(self, mocker):
+        client = _client()
+        response = client.get("/subscribe?email=test@example.com")
+        assert response.status_code == 200
+        assert b'value="test@example.com"' in response.data
+
+    def test_no_email_param_renders_empty_prefill(self, mocker):
+        client = _client()
+        response = client.get("/subscribe")
+        assert response.status_code == 200
+        assert b'value=""' in response.data
+        assert b"value=\"None\"" not in response.data
+
 
 class TestSubscribePostRoute:
     def test_missing_email_returns_400(self, mocker):
