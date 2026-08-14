@@ -2,8 +2,8 @@ import os
 import json
 from dotenv import dotenv_values
 from flask import jsonify
-from langchain_classic.chains import LLMChain
-from langchain_classic.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 from langchain_community.llms import HuggingFaceEndpoint
 
 from models.NewsModel import CybernewsDB
@@ -85,12 +85,12 @@ class NewsService:
             if message['role'] == 'user' and '{news_number}' in message['content']:
                 message['content'] = message['content'].replace('{news_number}', str(self.news_number))
 
-        # Create the LLMChain with the prompt and llm
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-        output = llm_chain.invoke(messages)
+        # Create the LCEL
+        chain = prompt | self.llm | StrOutputParser()
+        output = chain.invoke({"question": str(messages)})
 
         # Convert news data into JSON format
-        news_JSON = self.toJSON(output['text'])
+        news_JSON = self.toJSON(output)
   
         return news_JSON
 
