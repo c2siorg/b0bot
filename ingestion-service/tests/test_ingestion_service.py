@@ -120,6 +120,15 @@ def fake_conn_ctx():
 
 @patch("handler.mark_processed")
 @patch("handler.upsert_article", return_value=True)
+@patch(
+    "handler.enrich_metadata_with_llm",
+    return_value={
+        "cve_id": "CVE-2024-1",
+        "severity": "HIGH",
+        "affected_system": "Apache",
+        "topic_tags": ["cve"],
+    },
+)
 @patch("handler.generate_embedding", return_value=[0.1, 0.2])
 @patch("handler.prepare_embedding_text", return_value="text")
 @patch("handler.is_processed", return_value=False)
@@ -127,6 +136,7 @@ def test_article_discovered_success_path(
     _mock_is_processed,
     _mock_prepare,
     _mock_generate,
+    _mock_metadata,
     mock_upsert,
     mock_mark,
     fake_conn_ctx,
@@ -148,12 +158,16 @@ def test_article_discovered_success_path(
         handler.handle_article_discovered(event)
 
     mock_upsert.assert_called_once()
+    payload_arg = mock_upsert.call_args[0][1]
+    assert payload_arg["cve_id"] == "CVE-2024-1"
+    assert payload_arg["severity"] == "HIGH"
     mock_mark.assert_called_once_with(conn, "article:hash:discovered", "article.discovered")
     conn.commit.assert_called_once()
 
 
 @patch("handler.mark_processed")
 @patch("handler.upsert_article", return_value=False)
+@patch("handler.enrich_metadata_with_llm", return_value={"cve_id": None, "severity": None, "affected_system": None, "topic_tags": []})
 @patch("handler.generate_embedding", return_value=[])
 @patch("handler.prepare_embedding_text", return_value="text")
 @patch("handler.is_processed", return_value=False)
@@ -161,6 +175,7 @@ def test_article_discovered_embedding_failure_marks_failed(
     _mock_is_processed,
     _mock_prepare,
     _mock_generate,
+    _mock_metadata,
     mock_upsert,
     mock_mark,
     fake_conn_ctx,
@@ -188,6 +203,7 @@ def test_article_discovered_embedding_failure_marks_failed(
 
 @patch("handler.mark_processed")
 @patch("handler.upsert_article", return_value=True)
+@patch("handler.enrich_metadata_with_llm", return_value={"cve_id": None, "severity": None, "affected_system": None, "topic_tags": []})
 @patch("handler.generate_embedding", return_value=[0.1, 0.2])
 @patch("handler.prepare_embedding_text", return_value="")
 @patch("handler.is_processed", return_value=False)
@@ -195,6 +211,7 @@ def test_article_discovered_missing_optional_fields_still_upserts(
     _mock_is_processed,
     mock_prepare,
     _mock_generate,
+    _mock_metadata,
     mock_upsert,
     mock_mark,
     fake_conn_ctx,
@@ -224,6 +241,7 @@ def test_article_discovered_missing_optional_fields_still_upserts(
 
 @patch("handler.mark_processed")
 @patch("handler.upsert_article", return_value=True)
+@patch("handler.enrich_metadata_with_llm", return_value={"cve_id": None, "severity": None, "affected_system": None, "topic_tags": []})
 @patch("handler.generate_embedding", return_value=[0.1, 0.2])
 @patch("handler.prepare_embedding_text", return_value="")
 @patch("handler.is_processed", return_value=False)
@@ -231,6 +249,7 @@ def test_article_discovered_empty_title_and_snippet_still_processes(
     _mock_is_processed,
     mock_prepare,
     _mock_generate,
+    _mock_metadata,
     mock_upsert,
     mock_mark,
     fake_conn_ctx,

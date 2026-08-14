@@ -60,14 +60,23 @@ def upsert_article(conn, payload: dict, embedding=None, embedding_status: str = 
             INSERT INTO articles (
                 url, url_hash, title, content, author,
                 source_name, feed_url, image_url, published_at,
+                cve_id, severity, affected_system, topic_tags,
                 embedding_status, embedding
             )
             VALUES (
                 %(url)s, %(url_hash)s, %(title)s, %(content)s, %(author)s,
                 %(source_name)s, %(feed_url)s, %(image_url)s, %(published_at)s,
+                %(cve_id)s, %(severity)s, %(affected_system)s, %(topic_tags)s,
                 %(embedding_status)s, %(embedding)s
             )
             ON CONFLICT (url_hash) DO UPDATE SET
+                cve_id = COALESCE(EXCLUDED.cve_id, articles.cve_id),
+                severity = COALESCE(EXCLUDED.severity, articles.severity),
+                affected_system = COALESCE(EXCLUDED.affected_system, articles.affected_system),
+                topic_tags = CASE
+                    WHEN cardinality(EXCLUDED.topic_tags) > 0 THEN EXCLUDED.topic_tags
+                    ELSE articles.topic_tags
+                END,
                 embedding = EXCLUDED.embedding,
                 embedding_status = EXCLUDED.embedding_status,
                 updated_at = NOW()
@@ -83,8 +92,12 @@ def upsert_article(conn, payload: dict, embedding=None, embedding_status: str = 
                 "feed_url": payload.get("feed_url"),
                 "image_url": payload.get("image_url"),
                 "published_at": payload.get("published_at"),
+                "cve_id": payload.get("cve_id"),
+                "severity": payload.get("severity"),
+                "affected_system": payload.get("affected_system"),
+                "topic_tags": payload.get("topic_tags") or [],
                 "embedding_status": embedding_status,
-                "embedding": embedding,
+                "embedding": embedding if embedding else None,
             },
         )
         row = cur.fetchone()

@@ -28,6 +28,22 @@ EMBEDDING_MODEL = os.getenv(
 EMBEDDING_DIM = 384
 MAX_EMBEDDING_INPUT_CHARS = 512 * 4  # ~512 tokens for MiniLM
 
+# ─── Metadata extraction ─────────────────────────────────────────────────────
+HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
+METADATA_LLM_MODEL = os.getenv(
+    "METADATA_LLM_MODEL",
+    "CohereLabs/tiny-aya-global",
+)
+METADATA_LLM_PROVIDER = os.getenv("METADATA_LLM_PROVIDER", "cohere")
+
+KNOWN_TOPIC_TAGS = (
+    "malware",
+    "ransomware",
+    "cve",
+    "data breach",
+    "vulnerability",
+)
+
 # ─── article.discovered event contract ────────────────────────────────────────
 EVENT_ARTICLE_DISCOVERED = "article.discovered"
 ARTICLE_SCHEMA_VERSION = 1

@@ -10,6 +10,7 @@ import logging
 from config import EVENT_ARTICLE_DISCOVERED
 from db import get_connection, is_processed, mark_processed, upsert_article
 from embeddings import generate_embedding, prepare_embedding_text
+from llm_metadata import enrich_metadata_with_llm
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,12 @@ def handle_article_discovered(data: dict) -> None:
         else:
             embedding_status = "failed"
             logger.warning("embedding failed for article: %s", payload.get("url"))
+
+        metadata = enrich_metadata_with_llm(
+            payload.get("title", ""),
+            payload.get("content_snippet", ""),
+        )
+        payload.update(metadata)
 
         inserted = upsert_article(conn, payload, embedding, embedding_status)
         mark_processed(conn, idempotency_key, event_type)
