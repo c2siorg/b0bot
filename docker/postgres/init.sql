@@ -82,6 +82,26 @@ CREATE TABLE IF NOT EXISTS processed_jobs (
     event_type      TEXT NOT NULL,
     processed_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- ─── Sources ────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS sources (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name       TEXT NOT NULL,
+    url        TEXT NOT NULL UNIQUE,
+    status     TEXT NOT NULL DEFAULT 'pending'
+               CHECK (status IN ('pending','active')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO sources (name, url, status) VALUES
+    ('The Hacker News', 'https://thehackernews.com/feeds/posts/default', 'active'),
+    ('BleepingComputer', 'https://www.bleepingcomputer.com/feed/', 'active'),
+    ('CISA Alerts', 'https://www.cisa.gov/cybersecurity-advisories/all.xml', 'active'),
+    ('Dark Reading', 'https://www.darkreading.com/rss.xml', 'active'),
+    ('KrebsOnSecurity', 'https://krebsonsecurity.com/feed/', 'active'),
+    ('Google Security Blog', 'https://security.googleblog.com/feeds/posts/default', 'active'),
+    ('SANS ISC', 'https://isc.sans.edu/rssfeed.xml', 'active'),
+    ('SecurityWeek', 'https://www.securityweek.com/feed/', 'active')
+ON CONFLICT (url) DO NOTHING;
 
 -- ─── Seed data ─────────────────────────────────────────────────
 -- A few sample articles so the API and UI have something to render before the

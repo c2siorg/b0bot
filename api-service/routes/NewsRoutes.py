@@ -1,6 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
 from models.SubscriberModel import SubscriberDB
+from models.SourceModel import SourceDB
 from agents.notification import KNOWN_INTEREST_TAGS
 import json
 import os
@@ -122,11 +123,30 @@ def dashboard_route():
     return render_template("coming_soon.html", active_page="home", page_name="Home")
 
 """
-sources placeholder route, real sources page lands week 9
+sources page - GET lists sources, POST adds a new one (pending until
+ingestion-service reads from this table instead of the hardcoded RSS_FEEDS list)
 """
+source_db = SourceDB()
 @routes.route("/sources", methods=["GET"])
 def sources_route():
-    return render_template("coming_soon.html", active_page="sources", page_name="Sources")
+    return render_template("sources.html", sources=source_db.get_all_sources(), active_page="sources")
+@routes.route("/sources", methods=["POST"])
+def add_source_route():
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "invalid request"}), 400
+    name = (data.get("name") or "").strip()
+    url = (data.get("url") or "").strip()
+    if not name or not url:
+        return jsonify({"success": False, "message": "name and url are required"}), 400
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return jsonify({"success": False, "message": "please enter a valid url"}), 400
+    result = source_db.create_source(name=name, url=url)
+    if result is None:
+        return jsonify({"success": False, "message": "something went wrong, please try again"}), 500
+    if result is False:
+        return jsonify({"success": False, "message": "that source already exists"}), 409
+    return jsonify({"success": True, "message": "source added, pending activation"}), 200
 
 """
 chat route - multi-turn dialogue via LangGraph agents
