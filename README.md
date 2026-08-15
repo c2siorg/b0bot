@@ -20,6 +20,13 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 | ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) | ![News Keywords Page](assets/news_keywords.png) |
 
 ## Setup
+### Dependency Notes
+* This project requires Python 3.11 for ML library compatibility.
+* If you encounter wheel building errors during pip install, try using these commands
+`py -3.11 -m venv venv`
+`venv\Scripts\activate`
+`pip install -r requirements.txt --prefer-binary`
+
 1. Install all necessary packages
 
 `pip install -r ./requirements.txt`
@@ -29,7 +36,14 @@ Once a user requests our API, it retrieves news data from our knowledge base and
 ```
 https://www.pinecone.io/
 ```
-Login to Pinecone and create a new index with the name `news-index`. Then, add the Pinecone API key in the `.env` file.
+Login to Pinecone and create a new index with the name `cybernews-hybrid-test-2`. Then, add the Pinecone API key in the `.env` file.
+### Pinecone Configuration
+When creating your Pinecone API token and index, you must use the following exact settings for the hybrid search to function properly:
+* Index name: cybernews-hybrid-test-2
+* Dimensions: 384
+* Metric: dotproduct (Note: Do not use cosine)
+* Capacity mode: Serverless
+* Cloud / Region: AWS / us-east-1
 
 
 
