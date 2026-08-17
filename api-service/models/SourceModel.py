@@ -1,7 +1,6 @@
 """Postgres-backed source store.
 Handles listing and creating RSS sources for the sources page. New sources
-are inserted as 'pending' since ingestion-service still reads from the
-hardcoded RSS_FEEDS list in ingestion-service/feeds.py, not this table yet.
+are inserted as ``pending``; ingestion-service polls only ``active`` rows.
 
 get_all_sources caches its result in Redis, same pattern as responder.py's
 chat response cache. Sources rarely change and the page is read far more

@@ -6,7 +6,9 @@ deduplicates by url_hash against the ``processed_jobs`` table, and enqueues
 """
 import asyncio
 import hashlib
+import html
 import logging
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -26,10 +28,42 @@ from config import (
     TRACKING_QUERY_PREFIXES,
     article_idempotency_key,
 )
-from db import get_connection, is_processed
+from db import fetch_active_sources, get_connection, is_processed
 from feeds import RSS_FEEDS
 
 logger = logging.getLogger(__name__)
+
+_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def clean_text(value: str) -> str:
+    """Decode HTML entities and normalize whitespace for RSS text fields."""
+    if not value:
+        return ""
+    return html.unescape(value).strip()
+
+
+def clean_snippet(value: str) -> str:
+    """Decode entities and strip HTML tags from RSS summary/content."""
+    text = clean_text(value)
+    if not text:
+        return ""
+    return _TAG_RE.sub("", text).strip()
+
+
+def load_poll_feeds() -> list[dict]:
+    """Load active RSS sources from Postgres, with a hardcoded fallback."""
+    try:
+        with get_connection() as conn:
+            feeds = fetch_active_sources(conn)
+        if feeds:
+            logger.info("loaded %d active source(s) from database", len(feeds))
+            return feeds
+    except Exception:
+        logger.exception("failed loading sources from database")
+
+    logger.warning("no active sources in database — falling back to RSS_FEEDS")
+    return RSS_FEEDS
 
 
 def normalize_url(url: str) -> str:
@@ -66,7 +100,7 @@ def _parse_entry(entry: dict, feed: dict) -> dict | None:
 
     Returns ``None`` if required fields are missing.
     """
-    title = (entry.get("title") or "").strip()
+    title = clean_text(entry.get("title") or "")
     link = (entry.get("link") or "").strip()
     if not title or not link:
         return None
@@ -83,7 +117,7 @@ def _parse_entry(entry: dict, feed: dict) -> dict | None:
             snippet = content_list[0].get("value", "")
         elif isinstance(content_list, str):
             snippet = content_list
-    snippet = snippet.strip()[:CONTENT_SNIPPET_MAX_LEN]
+    snippet = clean_snippet(snippet)[:CONTENT_SNIPPET_MAX_LEN]
 
     published_date = None
     if entry.get("published_parsed"):
@@ -92,7 +126,7 @@ def _parse_entry(entry: dict, feed: dict) -> dict | None:
         except (TypeError, ValueError):
             published_date = None
 
-    author = entry.get("author") or feed.get("author") or ""
+    author = clean_text(entry.get("author") or feed.get("author") or "")
 
     image_url = None
     if entry.get("media_content"):
@@ -191,12 +225,13 @@ class RssPoller:
 
     async def poll_all_feeds(self) -> None:
         """Poll every configured RSS feed and enqueue newly discovered articles."""
-        logger.info("polling %d RSS feeds", len(RSS_FEEDS))
+        feeds = load_poll_feeds()
+        logger.info("polling %d RSS feed(s)", len(feeds))
         queue = self._get_queue()
         enqueued = 0
         skipped = 0
 
-        for feed in RSS_FEEDS:
+        for feed in feeds:
             feed_name = feed["name"]
             feed_enqueued = 0
             feed_skipped = 0

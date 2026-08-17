@@ -44,6 +44,24 @@ def mark_processed(conn, idempotency_key: str, event_type: str) -> None:
         )
 
 
+def fetch_active_sources(conn) -> list[dict]:
+    """Return RSS feeds with status ``active`` for the poller.
+
+    Each item matches the shape used by ``RSS_FEEDS``: ``name`` and ``url``.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT name, url
+            FROM sources
+            WHERE status = 'active'
+            ORDER BY created_at
+            """
+        )
+        rows = cur.fetchall()
+    return [{"name": row["name"], "url": row["url"]} for row in rows]
+
+
 def upsert_article(conn, payload: dict, embedding=None, embedding_status: str = "pending") -> bool:
     """Insert or update an article row.
 
