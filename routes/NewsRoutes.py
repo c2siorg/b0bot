@@ -1,6 +1,7 @@
 from flask import *
 from controllers.NewsController import NewsController
 routes = Blueprint("routes", __name__)
+from werkzeug.exceptions import HTTPException
 # news_controller = NewsController("mistralai") # default model name
 
 """
@@ -70,6 +71,30 @@ def getNewsWithKeywords_raw_route():
 """
 deal requests with wrong route
 """
-@routes.errorhandler(404)
-def notFound_route(error):
-    g.news_controller.notFound(error)
+@routes.errorhandler(Exception)
+def handle_all_errors(error):
+    """
+    Generic error handler for all exceptions
+    """
+
+    # Default values
+    status_code = 500
+    error_name = "Internal Server Error"
+    error_description = "Something went wrong."
+
+    # If it's an HTTPException (like 404, 400, etc.)
+    if isinstance(error, HTTPException):
+        status_code = error.code
+        error_name = error.name
+        error_description = error.description
+
+    # Log error (important for debugging)
+    print(f"[ERROR] {error_name} ({status_code}): {error}")
+
+    # Return HTML page
+    return render_template(
+        "error.html",
+        status_code=status_code,
+        error_name=error_name,
+        error_description=error_description
+    ), status_code
