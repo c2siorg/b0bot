@@ -6,6 +6,7 @@ from flask import Blueprint, g, jsonify, render_template, request
 
 from agents.notification import KNOWN_INTEREST_TAGS
 from controllers.NewsController import NewsController
+from models.NewsModel import CybernewsDB
 from models.SourceModel import SourceDB
 from models.SubscriberModel import SubscriberDB
 
@@ -113,16 +114,33 @@ def health_route():
 """
 chat UI route
 """
+news_db = CybernewsDB()
 @routes.route("/chat", methods=["GET"])
 def chat_ui_route():
-    return render_template("chat.html", active_page="chat")
+    article_id = request.args.get("article_id")
+    article = news_db.get_article_by_id(article_id) if article_id else None
+    return render_template("chat.html", active_page="chat", article=article)
 
 """
-dashboard placeholder route, real dashboard lands week 9
+dashboard - shows the feed, top news panel, and cve watchlist
 """
+DASHBOARD_FILTERS = {"newest", "critical", "frequent"}
 @routes.route("/dashboard", methods=["GET"])
 def dashboard_route():
-    return render_template("coming_soon.html", active_page="home", page_name="Home")
+    filter = request.args.get("filter", "newest")
+    if filter not in DASHBOARD_FILTERS:
+        filter = "newest"
+    source = request.args.get("source") or None
+    return render_template(
+        "dashboard.html",
+        active_page="home",
+        feed=news_db.get_dashboard_feed(filter=filter, source=source),
+        top_news=news_db.get_top_news(),
+        cve_watchlist=news_db.get_cve_watchlist(),
+        sources=news_db.get_distinct_sources(),
+        current_filter=filter,
+        current_source=source or "",
+    )
 
 """
 sources page - GET lists sources, POST adds a new one (pending until
@@ -158,22 +176,27 @@ def chat_route():
     data = request.get_json()
     user_input = data.get("message", "")
     session_id = data.get("session_id", "default")
+    article_id = data.get("article_id")
 
     if not user_input:
         return jsonify({"error": "message is required"}), 400
 
     history = _load_history(session_id)
-
+    # grounding is single-turn: article_id is only present on the exact
+    # request that came from clicking "Ask AI", nothing is persisted across
+    # turns for it, follow-up messages behave like any other chat message
+    active_article = news_db.get_article_by_id(article_id) if article_id else None
+    force_grounded = active_article is not None
     from agents import agent_graph
     result = agent_graph.invoke({
         "user_input": user_input,
         "session_id": session_id,
         "chat_history": history,
         "notification_triggered": False,
+        "active_article": active_article,
+        "force_grounded": force_grounded,
     })
-
     response = result["llm_response"]
-
     history.append({"role": "user", "content": user_input, "intent": result.get("intent")})
     history.append({"role": "assistant", "content": response})
     _save_history(session_id, history[-MAX_HISTORY:])

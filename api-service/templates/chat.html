@@ -254,6 +254,7 @@
         thread.scrollTop = thread.scrollHeight;
     }
 
+    let pendingArticleId = {{ (article.id if article else None)|tojson }};
     async function sendMessage() {
         const text = input.value.trim();
         if (!text) return;
@@ -261,12 +262,17 @@
         input.value = '';
         btn.disabled = true;
         appendUserMessage(text);
+        const payload = { message: text, session_id: sessionId };
+        if (pendingArticleId) {
+            payload.article_id = pendingArticleId;
+            pendingArticleId = null;
+        }
 
         try {
             const res = await fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, session_id: sessionId })
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
             appendBotResponse(data.response);
@@ -282,5 +288,9 @@
     input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') sendMessage();
     });
+    {% if article %}
+    input.value = 'tell me about this article: ' + {{ article.title|tojson }};
+    sendMessage();
+    {% endif %}
 </script>
 {% endblock %}

@@ -7,8 +7,11 @@ from agents.responder import responder_agent
 from agents.notification import notification_agent
 
 def _route_after_planner(state: PlannerState) -> str:
-    if state.get("intent") == "subscribe":
+    intent = state.get("intent")
+    if intent == "subscribe":
         return "notification"
+    if intent in ("chitchat", "grounded"):
+        return "responder"
     return "scraper"
 
 def build_graph():
@@ -24,6 +27,7 @@ def build_graph():
     graph.add_conditional_edges("planner", _route_after_planner, {
         "scraper": "scraper",
         "notification": "notification",
+        "responder": "responder",
     })
     graph.add_edge("scraper", "analyzer")
     graph.add_edge("analyzer", "responder")

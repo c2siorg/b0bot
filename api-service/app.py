@@ -1,9 +1,11 @@
 from dotenv import load_dotenv
 from flask import Flask
+import logging
 from routes.NewsRoutes import routes
 
 # Load environment variables
 load_dotenv()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 # `__name__` indicates the unique name of the current module
 app = Flask(__name__)
