@@ -43,3 +43,50 @@ class TestGraphRouting:
         assert result["intent"] == "subscribe"
         assert result["notification_triggered"] is True
         mock_db.get_news_collections.assert_not_called()
+
+    def test_chitchat_intent_skips_scraper(self, mocker):
+        from agents import planner as planner_module
+        from agents import scraper as scraper_module
+        from agents import responder as responder_module
+        mocker.patch.object(planner_module, "classify_intent", return_value={
+            "intent": "chitchat", "keywords": [],
+        })
+        mock_db = MagicMock()
+        mocker.patch.object(scraper_module, "db", mock_db)
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None
+        mocker.patch.object(responder_module, "redis_client", mock_redis)
+        from agents import agent_graph
+        result = agent_graph.invoke({
+            "user_input": "hi",
+            "session_id": "test",
+            "chat_history": [],
+            "notification_triggered": False,
+            "active_article": None,
+        })
+        assert result["intent"] == "chitchat"
+        mock_db.get_news_collections.assert_not_called()
+
+    def test_grounded_intent_skips_scraper(self, mocker):
+        from agents import planner as planner_module
+        from agents import scraper as scraper_module
+        from agents import responder as responder_module
+        classify_spy = mocker.patch.object(planner_module, "classify_intent")
+        mock_db = MagicMock()
+        mocker.patch.object(scraper_module, "db", mock_db)
+        mock_redis = MagicMock()
+        mock_redis.get.return_value = None
+        mocker.patch.object(responder_module, "redis_client", mock_redis)
+        mocker.patch.object(responder_module, "answer_grounded", return_value="a real answer")
+        from agents import agent_graph
+        result = agent_graph.invoke({
+            "user_input": "tell me about this article",
+            "session_id": "test",
+            "chat_history": [],
+            "notification_triggered": False,
+            "active_article": {"id": "1", "title": "Critical RCE Found", "summary": "s", "source_name": "Krebs"},
+            "force_grounded": True,
+        })
+        assert result["intent"] == "grounded"
+        mock_db.get_news_collections.assert_not_called()
+        classify_spy.assert_not_called()

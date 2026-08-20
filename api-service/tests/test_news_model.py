@@ -91,3 +91,172 @@ class TestCybernewsDB:
         db.get_news_collections(limit=10)
 
         mock_register.assert_called_once()
+
+
+class TestGetDashboardFeed:
+    def test_default_newest_order(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = [{"id": "1", "title": "t"}]
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        result = db.get_dashboard_feed()
+        assert result == [{"id": "1", "title": "t"}]
+        sql, params = mock_cur.execute.call_args[0]
+        assert "WHERE" not in sql
+        assert "ORDER BY ingested_at DESC" in sql
+        assert params == {"limit": 50}
+
+    def test_critical_filter_adds_where_clause(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_dashboard_feed(filter="critical")
+        sql, params = mock_cur.execute.call_args[0]
+        assert "severity = 'CRITICAL'" in sql
+
+    def test_source_filter_binds_as_param_not_interpolated(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_dashboard_feed(source="Krebs; DROP TABLE articles;")
+        sql, params = mock_cur.execute.call_args[0]
+        assert "source_name = %(source)s" in sql
+        assert params["source"] == "Krebs; DROP TABLE articles;"
+        assert "DROP TABLE" not in sql
+
+    def test_frequent_filter_orders_by_source_count(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_dashboard_feed(filter="frequent")
+        sql, params = mock_cur.execute.call_args[0]
+        assert "count(*)" in sql
+
+    def test_returns_empty_list_on_db_error(self, mocker):
+        from models import NewsModel
+        mocker.patch.object(NewsModel, "get_connection", side_effect=Exception("db down"))
+        db = NewsModel.CybernewsDB()
+        result = db.get_dashboard_feed()
+        assert result == []
+
+
+class TestGetDistinctSources:
+    def test_returns_source_names(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = [{"source_name": "Krebs"}, {"source_name": "SANS"}]
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        result = db.get_distinct_sources()
+        assert result == ["Krebs", "SANS"]
+
+    def test_returns_empty_list_on_db_error(self, mocker):
+        from models import NewsModel
+        mocker.patch.object(NewsModel, "get_connection", side_effect=Exception("db down"))
+        db = NewsModel.CybernewsDB()
+        result = db.get_distinct_sources()
+        assert result == []
+
+
+class TestGetCveWatchlist:
+    def test_filters_to_articles_with_cve_id(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_cve_watchlist()
+        sql, params = mock_cur.execute.call_args[0]
+        assert "cve_id IS NOT NULL" in sql
+
+    def test_returns_empty_list_on_db_error(self, mocker):
+        from models import NewsModel
+        mocker.patch.object(NewsModel, "get_connection", side_effect=Exception("db down"))
+        db = NewsModel.CybernewsDB()
+        result = db.get_cve_watchlist()
+        assert result == []
+
+
+class TestGetArticleById:
+    def test_returns_article_row(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchone.return_value = {"id": "1", "title": "t"}
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        result = db.get_article_by_id("1")
+        assert result == {"id": "1", "title": "t"}
+
+    def test_returns_none_on_db_error(self, mocker):
+        from models import NewsModel
+        mocker.patch.object(NewsModel, "get_connection", side_effect=Exception("db down"))
+        db = NewsModel.CybernewsDB()
+        result = db.get_article_by_id("1")
+        assert result is None
+
+    def test_selects_content_column(self, mocker):
+        """Regression test: get_article_by_id must select content, not just
+        summary, so Ask AI can ground answers on the real article body
+        instead of silently falling back to the short summary."""
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchone.return_value = None
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_article_by_id("1")
+        sql, params = mock_cur.execute.call_args[0]
+        assert "content" in sql
+
+
+class TestArticleIdCastToText:
+    """Regression test: article id must be cast to text in every query that
+    selects it. Without this cast, psycopg returns a uuid.UUID object, which
+    isn't JSON-serializable - and since session storage silently swallowed
+    that failure, article grounding broke without any visible error."""
+
+    def test_dashboard_feed_casts_id_to_text(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_dashboard_feed()
+        sql, params = mock_cur.execute.call_args[0]
+        assert "id::text AS id" in sql
+
+    def test_top_news_casts_id_to_text(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_top_news()
+        sql, params = mock_cur.execute.call_args[0]
+        assert "id::text AS id" in sql
+
+    def test_cve_watchlist_casts_id_to_text(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchall.return_value = []
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_cve_watchlist()
+        sql, params = mock_cur.execute.call_args[0]
+        assert "id::text AS id" in sql
+
+    def test_get_article_by_id_casts_id_to_text(self, mocker):
+        from models import NewsModel
+        conn_cm, mock_cur = make_conn_mock()
+        mock_cur.fetchone.return_value = None
+        mocker.patch.object(NewsModel, "get_connection", return_value=conn_cm)
+        db = NewsModel.CybernewsDB()
+        db.get_article_by_id("1")
+        sql, params = mock_cur.execute.call_args[0]
+        assert "id::text AS id" in sql

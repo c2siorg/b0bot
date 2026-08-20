@@ -11,3 +11,5 @@ class PlannerState(TypedDict):
     notification_triggered: bool
     notification_message: Optional[str]
     analysis: Optional[Any]
+    active_article: Optional[dict]
+    force_grounded: Optional[bool]
