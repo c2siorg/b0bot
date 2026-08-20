@@ -1,11 +1,13 @@
-from flask import *
-from controllers.NewsController import NewsController
-from models.SubscriberModel import SubscriberDB
-from models.SourceModel import SourceDB
-from agents.notification import KNOWN_INTEREST_TAGS
 import json
 import os
+
 import redis
+from flask import Blueprint, g, jsonify, render_template, request
+
+from agents.notification import KNOWN_INTEREST_TAGS
+from controllers.NewsController import NewsController
+from models.SourceModel import SourceDB
+from models.SubscriberModel import SubscriberDB
 
 routes = Blueprint("routes", __name__)
 

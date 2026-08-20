@@ -1,0 +1,26 @@
+target-version = "py311"
+line-length = 100
+
+exclude = [
+    ".git",
+    ".venv",
+    ".pytest_cache",
+    ".ruff_cache",
+    "__pycache__",
+    "api-service/.venv",
+    "ingestion-service/.venv",
+    "notification-service/.venv",
+    "api-service/cybernews",
+    "api-service/db_update",
+]
+
+[lint]
+select = ["E", "F"]
+ignore = [
+    "E501",  # existing lines are already long; don't restyle the whole repo
+]
+
+[lint.per-file-ignores]
+# Tests and the summarizer job import after sys.path / load_dotenv on purpose.
+"**/tests/**" = ["E402", "F401"]
+"api-service/jobs/summarize_articles.py" = ["E402"]

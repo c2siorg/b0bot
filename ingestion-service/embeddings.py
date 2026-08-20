@@ -5,7 +5,7 @@ for hybrid search in pgvector.
 """
 import logging
 
-from config import EMBEDDING_DIM, EMBEDDING_MODEL, MAX_EMBEDDING_INPUT_CHARS
+from config import EMBEDDING_MODEL, MAX_EMBEDDING_INPUT_CHARS
 
 logger = logging.getLogger(__name__)
 
