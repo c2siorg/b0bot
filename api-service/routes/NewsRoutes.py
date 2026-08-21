@@ -144,7 +144,7 @@ def dashboard_route():
 
 """
 sources page - GET lists sources, POST adds a new one (pending until
-ingestion-service reads from this table instead of the hardcoded RSS_FEEDS list)
+marked active in the database; ingestion-service polls active rows)
 """
 source_db = SourceDB()
 @routes.route("/sources", methods=["GET"])

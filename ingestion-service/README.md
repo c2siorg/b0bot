@@ -7,9 +7,10 @@ service.
 
 ## Status
 
-The worker consumes `article.discovered` jobs from a Redis BullMQ queue and
-inserts them into Postgres with `embedding_status=pending`. RSS polling and
-embedding are not implemented yet.
+Polls active rows from the shared ``sources`` table (seeded on first DB init),
+enqueues ``article.discovered`` jobs, generates embeddings, and upserts into
+Postgres + pgvector. Sources added on the api-service ``/sources`` page with
+``status = pending`` are ignored until activated in the database.
 
 ## Run
 
@@ -53,7 +54,9 @@ docker compose exec ingestion-service python scripts/publish_test_job.py
 During ingest, articles get `cve_id` (regex), then `severity`, `affected_system`, and `topic_tags`
 from Cohere via HF when a token is set, with regex/keyword fallback if the call fails.
 
-RSS feed URLs live in `feeds.py` (8 curated sources; verified manually). Shared env defaults and event constants live in `config.py`.
+RSS feed URLs normally come from the ``sources`` table (``status = active``).
+``feeds.py`` keeps the same default list as a fallback if the table is empty
+or Postgres is unreachable.
 
 To live-check all feeds locally:
 

@@ -1,4 +1,8 @@
-"""RSS feeds for polling, defined globally."""
+"""RSS feeds for polling.
+
+Default feeds used only when the ``sources`` table has no active rows or the
+database is unreachable. Normal operation reads active rows from Postgres.
+"""
 
 RSS_FEEDS = [
     {

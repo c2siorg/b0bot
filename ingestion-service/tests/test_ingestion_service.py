@@ -63,6 +63,50 @@ def test_parse_entry_minimal_fields_uses_empty_optional_values():
     assert parsed["source_name"] == "SecurityWeek"
 
 
+def test_parse_entry_decodes_html_entities_in_title_and_snippet():
+    feed = {"name": "SANS ISC", "url": "https://isc.sans.edu/rssfeed.xml"}
+    entry = {
+        "title": "Linux Shell Forensic: Let&#x3f;s Dive Into Atuin&#x21;, (Fri, Aug 7th)",
+        "link": "https://isc.sans.edu/diary/123",
+        "summary": "<p>Read more &amp; learn &#x2014; details</p>",
+    }
+    parsed = poller._parse_entry(entry, feed)
+
+    assert parsed is not None
+    assert parsed["title"] == "Linux Shell Forensic: Let?s Dive Into Atuin!, (Fri, Aug 7th)"
+    assert parsed["content_snippet"] == "Read more & learn — details"
+
+
+@patch("poller.fetch_active_sources", return_value=[{"name": "DB Feed", "url": "https://db.example/feed"}])
+@patch("poller.get_connection")
+def test_load_poll_feeds_uses_active_database_sources(mock_get_conn, _mock_fetch):
+    conn = MagicMock()
+    mock_get_conn.return_value.__enter__.return_value = conn
+
+    feeds = poller.load_poll_feeds()
+
+    assert feeds == [{"name": "DB Feed", "url": "https://db.example/feed"}]
+    _mock_fetch.assert_called_once_with(conn)
+
+
+@patch("poller.fetch_active_sources", return_value=[])
+@patch("poller.get_connection")
+def test_load_poll_feeds_falls_back_when_no_active_sources(mock_get_conn, _mock_fetch):
+    conn = MagicMock()
+    mock_get_conn.return_value.__enter__.return_value = conn
+
+    feeds = poller.load_poll_feeds()
+
+    assert feeds == poller.RSS_FEEDS
+
+
+@patch("poller.get_connection", side_effect=Exception("db down"))
+def test_load_poll_feeds_falls_back_on_database_error(_mock_get_conn):
+    feeds = poller.load_poll_feeds()
+
+    assert feeds == poller.RSS_FEEDS
+
+
 def test_build_job_structure():
     payload = {
         "title": "T",
