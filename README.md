@@ -17,9 +17,9 @@ B0Bot is a cybersecurity news intelligence platform built around a three-service
 
 The project has three services, using PostgreSQL (with pgvector for embeddings) and Redis to share data and handle caching, sessions, and job queues:
 
-- **ingestion-service** - polls RSS feeds on an interval, extracts CVE/severity/affected-system metadata via LLM, computes embeddings, writes to Postgres
+- **ingestion-service** - polls RSS feeds loaded from the sources table (falls back to a hardcoded list if empty), extracts CVE/severity/affected-system metadata via LLM, computes embeddings, writes to Postgres
 - **api-service** - Flask app serving the dashboard, chat, sources, and subscribe pages; runs every `/chat` request through a LangGraph agent pipeline
-- **notification-service** - consumes subscribe jobs from Redis, sends digest emails on a schedule
+- **notification-service** - polls Postgres for subscribers due for a digest and sends via SMTP; subscriptions are created directly by api-service, no queue involved
 
 All three run together via Docker Compose, alongside Postgres and Redis.
 
