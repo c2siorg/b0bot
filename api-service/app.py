@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
-from flask import *
+from flask import Flask
 import logging
-from langchain_classic.prompts import PromptTemplate
 from routes.NewsRoutes import routes
 
 # Load environment variables

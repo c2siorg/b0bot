@@ -1,16 +1,16 @@
-from flask import *
-import logging
-from controllers.NewsController import NewsController
-from models.SubscriberModel import SubscriberDB
-from models.SourceModel import SourceDB
-from models.NewsModel import CybernewsDB
-from agents.notification import KNOWN_INTEREST_TAGS
 import json
 import os
+
 import redis
+from flask import Blueprint, g, jsonify, render_template, request
+
+from agents.notification import KNOWN_INTEREST_TAGS
+from controllers.NewsController import NewsController
+from models.NewsModel import CybernewsDB
+from models.SourceModel import SourceDB
+from models.SubscriberModel import SubscriberDB
 
 routes = Blueprint("routes", __name__)
-logger = logging.getLogger(__name__)
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 SESSION_TTL = int(os.getenv("SESSION_TTL", "3600"))
