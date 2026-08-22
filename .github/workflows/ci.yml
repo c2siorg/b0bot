@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install Ruff
+        run: pip install --disable-pip-version-check -r requirements-dev.txt
+
+      - name: Ruff
+        run: ruff check api-service ingestion-service notification-service
+
+  test:
+    name: Test (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api-service, ingestion-service, notification-service]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ${{ matrix.service }}/requirements.txt
+
+      - name: Install dependencies
+        run: pip install --disable-pip-version-check -r ${{ matrix.service }}/requirements.txt
+
+      - name: Pytest
+        working-directory: ${{ matrix.service }}
+        run: python -m pytest tests/ -q
