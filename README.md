@@ -1,4 +1,4 @@
-<h1 align="center">B0Bot - CyberSecurity News API</h1>
+<h1 align="center">B0Bot - CyberSecurity News Intelligence Platform</h1>
 <p align="center">
   <br/><br/>
   <a href="https://github.com/c2siorg/b0bot"><img src="https://img.shields.io/github/forks/c2siorg/b0bot?style=plastic" alt ="Forks"/></a>
@@ -8,136 +8,88 @@
   <br/><br/>
 </p>
 <p>
-B0Bot is a CyberSecurity News API tailored for automated bots on social media platforms. It is a cutting-edge Flask-based API that grants seamless access to the latest cybersecurity and hacker news. Users can effortlessly retrieve news articles either through specific keywords or without, streamlining the information acquisition process.
-Once a user requests our API, it retrieves news data from our knowledge base and feeds it to the LLM. After the LLM processes the data, the API obtains the response and returns it in JSON format. The API is powered by LangChain and a Huggingface endpoint, ensuring that users receive accurate and up-to-date information.
+B0Bot is a cybersecurity news intelligence platform built around a three-service architecture: an ingestion service that polls RSS feeds and enriches articles with CVE/severity metadata, an api-service that runs a LangGraph agent pipeline for search, analysis, and a grounded Ask AI chat, and a notification service that sends digest emails to subscribers.
 </p>
 
-
-## App Screenshots
-
-| Home Page | LLM Page | News Page | News Keywords Page |
-| :--------:| :-------:| :---------:| :-----------------:|
-| ![Home Page](assets/home.png) | ![LLM Page](assets/llm.png) | ![News Page](assets/news.png) | ![News Keywords Page](assets/news_keywords.png) |
-
-## Setup
-1. Install all necessary packages
-
-`pip install -r ./requirements.txt`
-
-
-2. Set up your Pinecone database
-```
-https://www.pinecone.io/
-```
-Login to Pinecone and create a new index with the name `news-index`. Then, add the Pinecone API key in the `.env` file.
-
-
-
-
-3. Set up your HuggingFace account
-```
-https://huggingface.co/
-```
-
-
-4. Set up your environment variables
-
-Copy `.env.example` to `.env` and fill in your keys:
-```
-cp .env.example .env
-```
-
-Refer to [`.env.example`](.env.example) for all available keys and where to get them.
-
-
-5. Enrich/Update news data into your database
-
-Run `./db_update/Update.py` as a worker on a cloud service (e.g. heroku).
-Or, run `./db_update/Update.py` manually in local.
-
-
-6. Run the flask app
-
-`flask --app app.py run`
-
-> By default, the home page will open. The routes have to be defined manually.
-
-
-7. We have added support for the following routes:
-```
-/llama          # Loads the Meta-Llama-3-8B-Instruct
-/gemma          # Loads the Gemma-2b
-/mistralai      # Loads the Mistral-7B-Instruct-v0.2
-``` 
-
-> [!NOTE]
-> The Huggingface token you are using must have access to the LLama3 model listed above.
-> You can do so by visiting this [link](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct).
-
-
-8. Available url paths
-```
-/<llm-name>/news
-/<llm-name>/news_keywords?keywords=[Place news keywords here]
-
-# Bypass LLM mapping forraw hybrid search results
-/raw/news
-/raw/news_keywords?keywords=[Place news keywords here]
-```
-
-> [!IMPORTANT]
-> The interface will only work if you specify one of the available paths above.
-
-
-## Social Connectors
-
-**Layer 1 — RSS Feeds:** Pulls cybersecurity news from 7 curated RSS feeds (Reddit, KrebsOnSecurity, BleepingComputer, CISA, etc.) with no API key required.
-
-**Layer 2 — Opt-in API Connectors:** Supports YouTube Data API v3 and NewsAPI.org for richer coverage. Both use free tiers and silently skip if keys are absent. See [`.env.example`](.env.example) for setup.
-
-
-## High-Level Architecture Diagram
-
-Our API lives inside a Flask API and is powered by LangChain and a Huggingface endpoint. 
-
-In addition, to keep the knowledge base of news up to date, a scheduled script will be executed on a regular interval to retrieve the most recent cybersecurity news by scraping a list of target news websites and store them into the MongoDB Atlas Database. Everytime a user requests the API, news in the database will be read into LangChain's memory and fed to the LLM. Then, answers will be generated based on both the selected LLM and our knowledge base.
+## Architecture
 
 ![Architecture](assets/architecture.png)
 
-![Knowledge Base](assets/db_arch.png)
+The project has three services, using PostgreSQL (with pgvector for embeddings) and Redis to share data and handle caching, sessions, and job queues:
 
+- **ingestion-service** - polls RSS feeds loaded from the sources table (falls back to a hardcoded list if empty), extracts CVE/severity/affected-system metadata via LLM, computes embeddings, writes to Postgres
+- **api-service** - Flask app serving the dashboard, chat, sources, and subscribe pages; runs every `/chat` request through a LangGraph agent pipeline
+- **notification-service** - polls Postgres for subscribers due for a digest and sends via SMTP; subscriptions are created directly by api-service, no queue involved
 
-The API will continuely run as a serverless function (hosted on [Render](https://render.com/)) and it will record a successfull operation in a monitoring dashboard set up in [Better Uptime](https://betterstack.com/better-uptime).
+All three run together via Docker Compose, alongside Postgres and Redis.
+
+## Features
+
+- **Dashboard** - CVE Watchlist, Top News, and a filterable article feed (Newest / Critical / Frequent, by source)
+- **Ask AI** - click into any article to ask questions grounded in that specific article's content, powered by a hosted Cohere model
+- **Hybrid search** - chat queries combine keyword relevance and vector similarity search over article embeddings
+- **Sentiment & trend analysis** - per-article sentiment (DistilBERT) and keyword/trend surfacing across search results
+- **Sources management** - view and add RSS sources feeding the ingestion pipeline
+- **Subscribe / Unsubscribe** - email digests by interest tag and frequency (daily/weekly), manageable via chat or the subscribe form. Chat-based subscribe can span multiple turns - if the email or interests aren't in the message, it asks as a follow-up instead of failing silently
+
+## Setup
+
+1. Clone the repo and set up your environment file:
+
+```bash
+cp .env.example .env
+```
+
+Fill in the values - see [`.env.example`](.env.example) for what each one is for. At minimum you'll need a [HuggingFace token](https://huggingface.co/settings/tokens) - used for the local embedding/sentiment models, and to authenticate HuggingFace's InferenceClient, which is how the app reaches the hosted Cohere model for summaries, intent classification, and Ask AI.
+
+2. Bring up the full stack with Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+This starts Postgres (pgvector), Redis, and all three services. The api-service will be available at `http://localhost:5000`.
+
+3. (Optional) Configure social connectors - see the [Social Connectors](#social-connectors) section below.
+
+4. (Optional) Configure SMTP settings in `.env` if you want digest emails to actually send. Subscribing/unsubscribing itself doesn't depend on SMTP - that just updates the subscriber record. Without SMTP configured, the digest worker will fail to send and roll back that delivery attempt rather than crash, so it's safe to leave unset for local development.
+
+## Social Connectors
+
+**Layer 1 - RSS Feeds:** Pulls cybersecurity news from curated RSS feeds (KrebsOnSecurity, BleepingComputer, CISA, etc.) with no API key required.
+
+**Layer 2 - Opt-in API Connectors:** Supports YouTube Data API v3 and NewsAPI.org for additional coverage. Both use free tiers and silently skip if keys are absent. See [`.env.example`](.env.example) for setup.
 
 ## LangGraph Agent Pipeline
 
-The api-service runs every `/chat` request through a LangGraph pipeline of agents, each reading and updating a shared state object:
+Every `/chat` request runs through a LangGraph pipeline of agents, each reading and updating a shared state object:
 
-1. **PlannerAgent** - classifies intent (search, analyze, subscribe) and extracts keywords from the user message
-2. **ScraperAgent** - queries PostgreSQL for matching articles, falling back to recent articles if no keyword match is found
-3. **AnalyzerAgent** - computes keyword frequency, trending topics, and sentiment (positive/negative/neutral) across the retrieved articles
-4. **ResponderAgent** - checks Redis for a cached response first (5 minute TTL), otherwise builds the JSON response and caches it
-5. **NotificationAgent** - triggered when intent is subscribe; extracts email and frequency from the user message, pushes an article.digest job to Redis for the notification-service to consume
+1. **PlannerAgent** - classifies intent (search, analyze, subscribe, chitchat, or grounded) via a hosted LLM, with keyword-based fallback if the LLM call fails or is unavailable
+2. **ScraperAgent** - runs hybrid search (keyword + vector similarity) against PostgreSQL/pgvector to find matching articles
+3. **AnalyzerAgent** - computes keyword frequency, trending topics, and per-article sentiment (DistilBERT SST-2) across retrieved articles
+4. **ResponderAgent** - checks Redis for a cached response first (5 minute TTL), otherwise builds and caches the JSON response. For `grounded` intent (Ask AI), calls out to Cohere with the specific article's content instead of running the full search pipeline
+5. **NotificationAgent** - triggered on subscribe intent; extracts email, frequency, and interest tags from the conversation (can span multiple turns if info is missing), creates the subscriber
 
-### Example /chat response
-
-```json
-{
-  "message": "Found 2 articles.",
-  "articles": [...],
-  "chat_history": [],
-  "analysis": {
-    "keyword_frequency": [["ransomware", 2], ["critical", 2]],
-    "trending_topics": ["ransomware", "critical"],
-    "sentiment": "negative",
-    "positive_signals": [],
-    "negative_signals": ["ransomware", "critical", "vulnerability"]
-  }
-}
-```
 ### Multi-turn Session Memory
 
-Every `/chat` request accepts a `session_id`. Chat history for that session is stored in Redis with a 1 hour TTL and capped at 10 messages. Each request loads the history from Redis before invoking the pipeline and saves the updated history after, so follow-up questions have context from previous turns.
+Every `/chat` request accepts a `session_id`. Chat history for that session is stored in Redis with a 1 hour TTL and capped at 10 messages, so follow-up questions have context from previous turns. Ask AI grounding is single-turn only - it applies to the exact message sent right after clicking "Ask AI" on an article, not to later follow-ups in the same session.
+
+## App Screenshots
+
+**Landing page**
+![Landing Page](assets/landing.png)
+
+**Dashboard - CVE watchlist, top news, and article feed**
+![Dashboard](assets/dashboard.png)
+
+**Ask AI - grounded answers on a specific article**
+![Ask AI](assets/chat.png)
+
+**Search - hybrid search with sentiment per article**
+![Search](assets/chat-search.png)
+
+**Sources - manage RSS feeds powering ingestion**
+![Sources](assets/sources.png)
 
 ## Licensing
 

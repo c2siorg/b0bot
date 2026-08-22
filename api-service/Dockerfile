@@ -9,6 +9,7 @@ RUN pip install --upgrade pip \
 COPY . .
 
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+RUN python -c "from transformers import pipeline; pipeline('text-classification', model='distilbert-base-uncased-finetuned-sst-2-english', truncation=True, max_length=128)"
 
 EXPOSE 5000
 
