@@ -1,0 +1,2 @@
+# Local/CI quality tools. Runtime deps stay in each service's requirements.txt.
+ruff==0.12.11

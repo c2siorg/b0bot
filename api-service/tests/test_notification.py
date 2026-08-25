@@ -93,6 +93,7 @@ class TestNotificationAgent:
         state = make_state(user_input="subscribe vishak@example.com to malware")
         result = notification_agent(state)
         mock_db.create_subscriber.assert_called_once_with(email="vishak@example.com", frequency="daily", interests=["malware"])
+        assert result["notification_triggered"] is True
 
     def test_newly_added_interest_tags_matched(self, mocker):
         from agents import notification as notification_module
