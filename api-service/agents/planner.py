@@ -7,12 +7,37 @@ INTENT_KEYWORDS = {
     "subscribe": ["subscribe", "notify", "alert", "digest"],
 }
 
+# Whole-message fallback only: every token must be in this set, so
+# "hello ransomware" still falls through to search.
+_CHITCHAT_TOKENS = frozenset({
+    "hi", "hello", "hey", "yo",
+    "thanks", "thank", "ty",
+    "bye", "goodbye",
+    "ok", "okay",
+    "you", "please", "there",
+    "good", "morning", "afternoon", "evening", "night",
+    "how", "are", "doing", "whats", "up",
+})
+
+
+def _chitchat_tokens(user_input: str) -> set[str]:
+    """Strip punctuation so "thanks!" matches "thanks". Apostrophes are
+    dropped rather than treated as splits, so "what's" becomes "whats".
+    """
+    cleaned = user_input.replace("'", "")
+    cleaned = "".join(ch if ch.isalnum() else " " for ch in cleaned)
+    return set(cleaned.split())
+
 
 def _keyword_fallback_intent(user_input: str) -> str:
     """Word-boundary keyword matching, used when the LLM call fails or is
     unavailable. Splits on whitespace rather than substring-matching the
     raw string, so "target" doesn't match "get" or "somewhat" match "what".
     """
+    chitchat_words = _chitchat_tokens(user_input)
+    if chitchat_words and chitchat_words <= _CHITCHAT_TOKENS:
+        return "chitchat"
+
     words = set(user_input.split())
     for detected_intent, triggers in INTENT_KEYWORDS.items():
         if words & set(triggers):
@@ -40,7 +65,10 @@ def planner_agent(state: PlannerState) -> PlannerState:
         keywords = classified["keywords"]
     else:
         intent = _keyword_fallback_intent(user_input)
-        stop_words = {"the", "a", "an", "is", "are", "what", "show", "me", "find", "get", "latest"}
-        keywords = [w for w in user_input.split() if w not in stop_words]
+        if intent == "chitchat":
+            keywords = []
+        else:
+            stop_words = {"the", "a", "an", "is", "are", "what", "show", "me", "find", "get", "latest"}
+            keywords = [w for w in user_input.split() if w not in stop_words]
 
     return {**state, "intent": intent, "keywords": keywords, "active_article": None}

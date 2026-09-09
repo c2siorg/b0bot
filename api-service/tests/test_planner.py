@@ -52,6 +52,20 @@ class TestPlannerAgentKeywordFallback:
         result = planner.planner_agent(state)
         assert result["intent"] == "search"
 
+    def test_greetings_and_thanks_are_chitchat(self, mocker):
+        from agents import planner
+        mocker.patch.object(planner, "classify_intent", return_value=None)
+        for message in ("hello", "hi", "hey", "thanks", "thanks!", "thank you", "bye"):
+            result = planner.planner_agent(make_state(user_input=message))
+            assert result["intent"] == "chitchat", message
+            assert result["keywords"] == []
+
+    def test_greeting_with_a_topic_stays_search(self, mocker):
+        from agents import planner
+        mocker.patch.object(planner, "classify_intent", return_value=None)
+        result = planner.planner_agent(make_state(user_input="hello ransomware"))
+        assert result["intent"] == "search"
+
     def test_stop_words_stripped_from_keywords(self, mocker):
         from agents import planner
         mocker.patch.object(planner, "classify_intent", return_value=None)
@@ -118,7 +132,7 @@ class TestPlannerAgentForceGrounded:
     def test_force_grounded_without_active_article_falls_through_normally(self, mocker):
         from agents import planner
         mocker.patch.object(planner, "classify_intent", return_value=None)
-        state = make_state(user_input="hello", active_article=None, force_grounded=True)
+        state = make_state(user_input="ransomware", active_article=None, force_grounded=True)
         result = planner.planner_agent(state)
         assert result["intent"] == "search"
 
