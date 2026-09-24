@@ -1,11 +1,13 @@
 import json
 import os
+
 import redis
 from flask import Blueprint, jsonify, render_template, request
-from models.SubscriberModel import SubscriberDB
-from models.SourceModel import SourceDB
-from models.NewsModel import CybernewsDB
+
 from agents.notification import KNOWN_INTEREST_TAGS
+from models.NewsModel import CybernewsDB
+from models.SourceModel import SourceDB
+from models.SubscriberModel import SubscriberDB
 
 routes = Blueprint("routes", __name__)
 

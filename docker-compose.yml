@@ -40,7 +40,6 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-b0bot}:${POSTGRES_PASSWORD:-b0bot}@postgres:5432/${POSTGRES_DB:-b0bot}
       REDIS_URL: redis://redis:6379/0
       HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
-      HF_HUB_OFFLINE: "1"
     depends_on:
       postgres:
         condition: service_healthy
