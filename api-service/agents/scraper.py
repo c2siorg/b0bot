@@ -24,9 +24,6 @@ def scraper_agent(state: PlannerState) -> PlannerState:
             search_type="hybrid",
             query_vector=query_vector or None,
         )
-        # Fall back to all articles if keyword search returns nothing
-        if not articles:
-            articles = db.get_news_collections()
     else:
         articles = db.get_news_collections()
 

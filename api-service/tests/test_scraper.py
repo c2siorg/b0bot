@@ -53,15 +53,18 @@ class TestScraperAgent:
         scraper_agent(state)
         mock_db.get_news_collections.assert_called_once_with()
 
-    def test_falls_back_when_keyword_search_returns_empty(self, mocker):
+    def test_does_not_return_unrelated_articles_when_keyword_search_is_empty(self, mocker):
         from agents import scraper as scraper_module
         mock_db = MagicMock()
-        mock_db.get_news_collections.side_effect = [[], [{"headlines": "test", "author": "x", "newsDate": "01/01/2026", "newsURL": "http://x.com", "fullNews": ""}]]
+        mock_db.get_news_collections.return_value = []
         mocker.patch.object(scraper_module, "db", mock_db)
         from agents.scraper import scraper_agent
         state = make_state(intent="search", keywords=["ransomware"])
-        scraper_agent(state)
-        assert mock_db.get_news_collections.call_count == 2
+        result = scraper_agent(state)
+        mock_db.get_news_collections.assert_called_once_with(
+            is_keyword=True, keyword="ransomware", search_type="hybrid", query_vector=None
+        )
+        assert result["retrieved_articles"] == []
 
     def test_articles_normalized_correctly(self, mocker):
         from agents import scraper as scraper_module
