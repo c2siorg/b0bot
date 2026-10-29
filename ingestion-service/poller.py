@@ -270,7 +270,7 @@ class RssPoller:
                     await queue.add(
                         EVENT_ARTICLE_DISCOVERED,
                         job_data,
-                        {"jobId": idempotency_key},
+                        {"jobId": idempotency_key, "removeOnComplete": True},
                     )
                     feed_enqueued += 1
                     enqueued += 1

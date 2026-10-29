@@ -1,6 +1,7 @@
+import asyncio
 import os
 import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -215,7 +216,7 @@ def test_article_discovered_success_path(
 @patch("handler.generate_embedding", return_value=[])
 @patch("handler.prepare_embedding_text", return_value="text")
 @patch("handler.is_processed", return_value=False)
-def test_article_discovered_embedding_failure_marks_failed(
+def test_article_discovered_embedding_failure_remains_retryable(
     _mock_is_processed,
     _mock_prepare,
     _mock_generate,
@@ -224,7 +225,7 @@ def test_article_discovered_embedding_failure_marks_failed(
     mock_mark,
     fake_conn_ctx,
 ):
-    _conn, ctx = fake_conn_ctx
+    conn, ctx = fake_conn_ctx
     event = {
         "event_type": "article.discovered",
         "idempotency_key": "article:hash:discovered",
@@ -242,7 +243,26 @@ def test_article_discovered_embedding_failure_marks_failed(
 
     args, _kwargs = mock_upsert.call_args
     assert args[3] == "failed"
-    mock_mark.assert_called_once()
+    mock_mark.assert_not_called()
+    conn.commit.assert_called_once()
+
+
+def test_poller_removes_completed_jobs_so_failed_articles_can_be_requeued():
+    queue = AsyncMock()
+    rss_poller = poller.RssPoller("redis://localhost")
+    rss_poller._get_queue = MagicMock(return_value=queue)
+    rss_poller._already_processed = MagicMock(return_value=False)
+    feed = {"name": "Feed", "url": "https://feed.example/rss"}
+    entry = {"title": "Article", "link": "https://example.com/article"}
+
+    with patch("poller.load_poll_feeds", return_value=[feed]), patch(
+        "poller._fetch_feed", return_value=[entry]
+    ):
+        asyncio.run(rss_poller.poll_all_feeds())
+
+    queue.add.assert_awaited_once()
+    options = queue.add.await_args.args[2]
+    assert options["removeOnComplete"] is True
 
 
 @patch("handler.mark_processed")

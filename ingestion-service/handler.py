@@ -49,7 +49,10 @@ def handle_article_discovered(data: dict) -> None:
         payload.update(metadata)
 
         inserted = upsert_article(conn, payload, embedding, embedding_status)
-        mark_processed(conn, idempotency_key, event_type)
+        # Keep failed embeddings out of processed_jobs. The poller will
+        # discover the same URL again on its next cycle and retry it.
+        if embedding:
+            mark_processed(conn, idempotency_key, event_type)
         conn.commit()
 
         if inserted:
