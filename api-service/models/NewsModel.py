@@ -75,7 +75,7 @@ _CVE_WATCHLIST_SELECT = """
         to_char(published_at, 'DD-MM-YYYY') AS date
     FROM articles
     WHERE cve_id IS NOT NULL
-    ORDER BY published_at DESC
+    ORDER BY published_at DESC NULLS LAST
     LIMIT %(limit)s
 """
 

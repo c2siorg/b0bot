@@ -175,6 +175,7 @@ class TestGetCveWatchlist:
         db.get_cve_watchlist()
         sql, params = mock_cur.execute.call_args[0]
         assert "cve_id IS NOT NULL" in sql
+        assert "ORDER BY published_at DESC NULLS LAST" in sql
 
     def test_returns_empty_list_on_db_error(self, mocker):
         from models import NewsModel
