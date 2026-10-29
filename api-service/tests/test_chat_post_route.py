@@ -14,6 +14,25 @@ class TestChatPostRoute:
         response = client.post("/chat", json={"session_id": "s1"})
         assert response.status_code == 400
 
+    def test_missing_session_ids_get_isolated_sessions(self, mocker):
+        from routes import NewsRoutes
+
+        mocker.patch.object(NewsRoutes, "_load_history", return_value=[])
+        mock_save_history = mocker.patch.object(NewsRoutes, "_save_history")
+        mock_graph = MagicMock()
+        mock_graph.invoke.return_value = {"llm_response": '{"message":"hello"}', "intent": "chitchat"}
+        mocker.patch("agents.agent_graph", mock_graph)
+
+        client = _client()
+        responses = [
+            client.post("/chat", json={"message": "hello"}).get_json(),
+            client.post("/chat", json={"message": "hello"}).get_json(),
+        ]
+
+        session_ids = [response["session_id"] for response in responses]
+        assert session_ids[0] != session_ids[1]
+        assert [call.args[0] for call in mock_save_history.call_args_list] == session_ids
+
     def test_article_id_in_payload_fetches_and_force_grounds(self, mocker):
         from routes import NewsRoutes
         mock_news_db = MagicMock()

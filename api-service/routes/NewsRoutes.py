@@ -1,5 +1,6 @@
 import json
 import os
+from uuid import uuid4
 
 import redis
 from flask import Blueprint, jsonify, render_template, request
@@ -126,7 +127,9 @@ chat route - multi-turn dialogue via LangGraph agents
 def chat_route():
     data = request.get_json()
     user_input = data.get("message", "")
-    session_id = data.get("session_id", "default")
+    # A fixed fallback would make unrelated API clients share one history.
+    # Return a generated ID so clients can opt into multi-turn context safely.
+    session_id = data.get("session_id") or uuid4().hex
     article_id = data.get("article_id")
 
     if not user_input:
@@ -152,7 +155,7 @@ def chat_route():
     history.append({"role": "assistant", "content": response})
     _save_history(session_id, history[-MAX_HISTORY:])
 
-    return jsonify({"response": response}), 200
+    return jsonify({"response": response, "session_id": session_id}), 200
 
 """
 subscribe form - GET renders the form, POST creates the subscriber row
