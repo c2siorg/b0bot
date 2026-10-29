@@ -6,7 +6,7 @@ from typing import Iterable
 
 CVE_PATTERN = re.compile(r"CVE-\d{4}-\d{4,}", re.IGNORECASE)
 CVSS_PATTERN = re.compile(
-    r"CVSS\s*(?:score)?\s*(?:of\s*)?[:(]?\s*(\d+(?:\.\d+)?)",
+    r"\bCVSS(?:\s+v?\d+(?:\.\d+)?)?\s+score\s*(?:of\s*)?[:=]?\s*(\d+(?:\.\d+)?)",
     re.IGNORECASE,
 )
 HTML_TAG_PATTERN = re.compile(r"<[^>]+>")

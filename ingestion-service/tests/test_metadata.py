@@ -24,6 +24,16 @@ def test_severity_from_cvss_score():
     assert metadata.extract_severity_fallback(text) == "HIGH"
 
 
+def test_cvss_vector_version_is_not_mistaken_for_score():
+    text = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+    assert metadata.extract_severity_fallback(text) is None
+
+
+def test_cvss_version_with_explicit_score_uses_score():
+    text = "CVSS v3.1 score: 9.8"
+    assert metadata.extract_severity_fallback(text) == "CRITICAL"
+
+
 def test_extract_topic_tags_fallback_for_ransomware():
     text = "A new ransomware campaign targets hospitals"
     tags = metadata.extract_topic_tags_fallback(text)
