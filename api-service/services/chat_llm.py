@@ -14,7 +14,10 @@ import os
 logger = logging.getLogger(__name__)
 
 HF_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
-COHERE_MODEL = "CohereLabs/tiny-aya-global"
+COHERE_MODEL = os.getenv(
+    "LLM_MODEL",
+    "CohereLabs/tiny-aya-global",
+)
 MAX_INPUT_CHARS = 2000
 
 VALID_INTENTS = {"search", "analyze", "subscribe", "chitchat"}
