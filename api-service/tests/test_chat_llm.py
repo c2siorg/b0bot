@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-
+import importlib
 
 def _mock_response(content):
     mock_response = MagicMock()
@@ -161,3 +161,19 @@ class TestAnswerGrounded:
         result = chat_llm.answer_grounded({"title": "t"}, "what happened?")
         assert result is None
 
+class TestModelConfiguration:
+    def test_env_override_used_for_model(self, monkeypatch):
+        monkeypatch.setenv("LLM_MODEL", "test-org/custom-model")
+
+        from services import chat_llm
+        importlib.reload(chat_llm)
+
+        assert chat_llm.COHERE_MODEL == "test-org/custom-model"
+
+    def test_default_model_used_when_env_missing(self, monkeypatch):
+        monkeypatch.delenv("LLM_MODEL", raising=False)
+
+        from services import chat_llm
+        importlib.reload(chat_llm)
+
+        assert chat_llm.COHERE_MODEL == "CohereLabs/tiny-aya-global"
